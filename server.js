@@ -13,19 +13,60 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3001; // Changed to 3001 to avoid EADDRINUSE
+const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'manarashiswa_secret_key_2026';
 
-// Ensure uploads directory exists
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
+// Helper to determine database path (supporting read/write /tmp path on Vercel)
+const getDatabasePath = () => {
+    const localPath = path.join(__dirname, 'database.sqlite');
+    if (process.env.VERCEL) {
+        const tmpPath = path.join('/tmp', 'database.sqlite');
+        if (!fs.existsSync(tmpPath)) {
+            try {
+                if (fs.existsSync(localPath)) {
+                    fs.copyFileSync(localPath, tmpPath);
+                    console.log('Copied database.sqlite template to /tmp');
+                } else {
+                    console.log('Local database.sqlite template not found.');
+                }
+            } catch (err) {
+                console.error('Failed to copy database to /tmp:', err);
+            }
+        }
+        return tmpPath;
+    }
+    return localPath;
+};
+
+// Helper to determine uploads directory path (supporting /tmp path on Vercel)
+const getUploadsDir = () => {
+    if (process.env.VERCEL) {
+        const tmpUploads = path.join('/tmp', 'uploads');
+        if (!fs.existsSync(tmpUploads)) {
+            try {
+                fs.mkdirSync(tmpUploads, { recursive: true });
+            } catch (err) {
+                console.error('Failed to create /tmp/uploads:', err);
+            }
+        }
+        return tmpUploads;
+    }
+    const localUploads = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(localUploads)) {
+        try {
+            fs.mkdirSync(localUploads, { recursive: true });
+        } catch (err) {
+            console.error('Failed to create local uploads folder:', err);
+        }
+    }
+    return localUploads;
+};
 
 // Database connection wrapper for SQLite
 let db;
 const pool = {
     execute: async (query, params = []) => {
-        if (!db) db = await open({ filename: 'database.sqlite', driver: sqlite3.Database });
+        if (!db) db = await open({ filename: getDatabasePath(), driver: sqlite3.Database });
         
         if (query.includes('ON DUPLICATE KEY UPDATE')) {
             query = query.replace('ON DUPLICATE KEY UPDATE setting_value = ?', 'ON CONFLICT(setting_key) DO UPDATE SET setting_value = ?');
@@ -45,7 +86,7 @@ const pool = {
 };
 
 (async () => {
-    db = await open({ filename: 'database.sqlite', driver: sqlite3.Database });
+    db = await open({ filename: getDatabasePath(), driver: sqlite3.Database });
 })();
 
 const logAudit = async (username, action, table_name, record_id, details) => {
@@ -69,6 +110,9 @@ app.use(express.static(__dirname));
 app.use('/css', express.static(path.join(__dirname, 'css')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+if (process.env.VERCEL) {
+    app.use('/uploads', express.static(path.join('/tmp', 'uploads')));
+}
 
 // Rate limiting for API only
 const limiter = rateLimit({
@@ -79,7 +123,7 @@ app.use('/api/', limiter);
 
 // File upload configuration
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
+    destination: (req, file, cb) => cb(null, getUploadsDir()),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'))
 });
 const upload = multer({ storage });
@@ -711,7 +755,7 @@ app.get('/api/admin/audit-log', authenticateToken, async (req, res) => {
 
 app.get('/api/admin/backup', authenticateToken, (req, res) => {
     if(req.user.role !== 'admin') return res.status(403).json({error: 'Admin only'});
-    const file = path.join(__dirname, 'database.sqlite');
+    const file = getDatabasePath();
     res.download(file, `backup-${Date.now()}.sqlite`);
 });
 
@@ -721,8 +765,12 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`🚀 Manarashiswa Nagarpalika Server running on port ${PORT}`);
-    console.log(`📍 API: http://localhost:${PORT}/api`);
-});
+// Start Server (only if not running on Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Manarashiswa Nagarpalika Server running on port ${PORT}`);
+        console.log(`📍 API: http://localhost:${PORT}/api`);
+    });
+}
+
+module.exports = app;
