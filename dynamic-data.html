@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>विविध जानकारी | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .dynamic-header {
+            background: var(--primary);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .dynamic-header h1 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: 36px;
+        }
+        .dynamic-header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .data-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .data-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-5px);
+        }
+        .data-card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-card-content {
+            padding: 20px;
+        }
+        .data-field {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+        }
+        .data-field:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .field-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .field-value {
+            font-size: 16px;
+            color: var(--text);
+            font-weight: 500;
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 50px;
+            font-size: 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        
+        /* Table View */
+        .table-view-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .dynamic-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .dynamic-table th, .dynamic-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .dynamic-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+        .dynamic-table tr:hover {
+            background: #fdfdfd;
+        }
+        
+        .view-toggle {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-container"></div>
+    
+    <div class="dynamic-header">
+        <div class="container">
+            <h1 id="pageTitle">जानकारी लोड हुँदैछ...</h1>
+            <p id="pageDescription"></p>
+        </div>
+    </div>
+    
+    <div class="container page-content">
+        <div class="filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="खोज्नुहोस्...">
+            </div>
+            <div class="view-toggle">
+                <button class="btn btn-outline btn-sm active" id="btnGrid" onclick="setView('grid')">📱 ग्रिड भ्यू (Grid)</button>
+                <button class="btn btn-outline btn-sm" id="btnTable" onclick="setView('table')">📄 तालिका भ्यू (Table)</button>
+            </div>
+        </div>
+
+        <div id="contentArea" class="loading-state">
+            डाटा लोड हुँदैछ, कृपया पर्खनुहोस्... (Loading...)
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('dynamic');
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableName = urlParams.get('table');
+        
+        let schema = null;
+        let data = [];
+        let currentView = 'grid'; // 'grid' or 'table'
+        
+        async function loadData() {
+            if (!tableName) {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:48px; margin-bottom:20px;">⚠️</div>
+                        <h3>कुनै डाटा फेला परेन</h3>
+                        <p>टेबल नाम निर्दिष्ट गरिएको छैन।</p>
+                    </div>`;
+                return;
+            }
+            
+            try {
+                // Fetch schema
+                const schemaRes = await api(`/dynamic/schema/${tableName}`);
+                if (!schemaRes || schemaRes.error) {
+                    throw new Error('Table not found');
+                }
+                schema = schemaRes;
+                
+                document.getElementById('pageTitle').textContent = schema.table.icon + ' ' + schema.table.display_name;
+                document.getElementById('pageDescription').textContent = schema.table.description || '';
+                
+                // Fetch data
+                data = await api(`/dynamic/data/${tableName}`);
+                
+                renderContent();
+                
+            } catch (err) {
+                document.getElementById('contentArea').innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:48px; margin-bottom:20px;">❌</div>
+                        <h3>त्रुटि</h3>
+                        <p>डाटा लोड गर्न समस्या भयो। यो पेज अवस्थित नहुन सक्छ।</p>
+                    </div>`;
+            }
+        }
+        
+        function setView(view) {
+            currentView = view;
+            document.getElementById('btnGrid').classList.toggle('active', view === 'grid');
+            document.getElementById('btnGrid').style.background = view === 'grid' ? 'var(--primary)' : 'transparent';
+            document.getElementById('btnGrid').style.color = view === 'grid' ? 'white' : 'var(--primary)';
+            
+            document.getElementById('btnTable').classList.toggle('active', view === 'table');
+            document.getElementById('btnTable').style.background = view === 'table' ? 'var(--primary)' : 'transparent';
+            document.getElementById('btnTable').style.color = view === 'table' ? 'white' : 'var(--primary)';
+            
+            renderContent();
+        }
+        
+        function renderContent() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const container = document.getElementById('contentArea');
+            
+            // Filter data
+            const filteredData = data.filter(row => {
+                if (!searchTerm) return true;
+                return schema.columns.some(col => {
+                    const val = row[col.column_name];
+                    return val && String(val).toLowerCase().includes(searchTerm);
+                });
+            });
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size:48px; margin-bottom:20px;">📭</div>
+                        <h3>कुनै रेकर्ड भेटिएन</h3>
+                    </div>`;
+                return;
+            }
+            
+            if (currentView === 'grid') {
+                renderGrid(filteredData, container);
+            } else {
+                renderTable(filteredData, container);
+            }
+        }
+        
+        function renderGrid(filteredData, container) {
+            let html = '<div class="card-grid">';
+            
+            filteredData.forEach(row => {
+                html += '<div class="data-card">';
+                
+                // See if there's an image column to use as header
+                const imgCol = schema.columns.find(c => c.column_type === 'image');
+                if (imgCol && row[imgCol.column_name]) {
+                    html += `<img src="${row[imgCol.column_name]}" class="data-card-img" alt="Image">`;
+                }
+                
+                html += '<div class="data-card-content">';
+                
+                schema.columns.forEach(col => {
+                    if (col.column_type === 'image') return; // Handled above
+                    
+                    const val = row[col.column_name];
+                    if (!val) return;
+                    
+                    let displayVal = val;
+                    if (col.column_type === 'file') {
+                        displayVal = `<a href="${val}" target="_blank" class="btn btn-outline btn-sm">📄 फाइल डाउनलोड गर्नुहोस्</a>`;
+                    }
+                    
+                    html += `
+                        <div class="data-field">
+                            <span class="field-label">${col.display_name}</span>
+                            <span class="field-value">${displayVal}</span>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function renderTable(filteredData, container) {
+            let html = `
+            <div class="table-view-container">
+                <table class="dynamic-table">
+                    <thead>
+                        <tr>`;
+            
+            schema.columns.forEach(col => {
+                html += `<th>${col.display_name}</th>`;
+            });
+            
+            html += `</tr>
+                    </thead>
+                    <tbody>`;
+            
+            filteredData.forEach(row => {
+                html += '<tr>';
+                schema.columns.forEach(col => {
+                    let val = row[col.column_name] || '';
+                    if (col.column_type === 'image' && val) {
+                        val = `<img src="${val}" height="40" style="border-radius:4px; object-fit:cover; width:40px;">`;
+                    } else if (col.column_type === 'file' && val) {
+                        val = `<a href="${val}" target="_blank">Download</a>`;
+                    }
+                    html += `<td>${val}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', renderContent);
+        
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

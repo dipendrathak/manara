@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>सूचना तथा समाचार | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <a href="#">सूचना तथा जानकारी</a> <span>></span>
+            <span>सूचना तथा समाचार</span>
+        </div>
+        
+        <h2 class="section-title">सूचना तथा समाचार (Notices & News)</h2>
+        
+        <div class="card" style="margin-bottom: 30px; display:flex; gap:15px; flex-wrap:wrap;">
+            <select id="typeFilter" class="form-control" style="width:200px;" onchange="fetchNotices()">
+                <option value="">सबै प्रकार</option>
+                <option value="notice">सूचना</option>
+                <option value="urgent">अत्यन्त जरुरी</option>
+                <option value="news">समाचार</option>
+                <option value="procurement">बोलपत्र</option>
+            </select>
+        </div>
+        
+        <div class="notice-list" id="noticesList">
+            <!-- Fallback Data -->
+            <div class="notice-item">
+                <span class="badge badge-procurement">बोलपत्र</span>
+                <a href="#" style="font-weight:600; font-size:18px;">सार्वजनिक खरीद / बोलपत्र सूचना</a>
+                <span style="font-size:12px; color:var(--text-light);">मिति: २०८२-०३-०१</span>
+                <p style="margin-top:10px;">मिति २०८२ सम्म आवेदन दिनुहोस्।</p>
+            </div>
+            <div class="notice-item">
+                <span class="badge badge-urgent">अत्यन्त जरुरी</span>
+                <a href="#" style="font-weight:600; font-size:18px;">घर नक्सा अभिलेखीकरण सम्बन्धी अत्यन्त जरुरी सूचना</a>
+                <span style="font-size:12px; color:var(--text-light);">मिति: २०८२-०२-१५</span>
+            </div>
+        </div>
+    </main>
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('notices');
+        
+        document.addEventListener('DOMContentLoaded', fetchNotices);
+
+        async function fetchNotices() {
+            try {
+                const type = document.getElementById('typeFilter').value;
+                const url = type ? `/notices?type=${type}` : '/notices';
+                const notices = await api(url);
+                
+                if (notices && notices.length > 0) {
+                    const list = document.getElementById('noticesList');
+                    list.innerHTML = '';
+                    
+                    notices.forEach(n => {
+                        let badgeClass = 'badge-notice';
+                        let badgeText = 'सूचना';
+                        if(n.notice_type === 'urgent') { badgeClass = 'badge-urgent'; badgeText = 'अत्यन्त जरुरी'; }
+                        else if(n.notice_type === 'news') { badgeClass = 'badge-news'; badgeText = 'समाचार'; }
+                        else if(n.notice_type === 'procurement') { badgeClass = 'badge-procurement'; badgeText = 'बोलपत्र'; }
+                        
+                        list.innerHTML += `
+                            <div class="notice-item">
+                                <div><span class="badge ${badgeClass}">${badgeText}</span></div>
+                                <a href="#" style="font-weight:600; font-size:18px;">${n.title}</a>
+                                <span style="font-size:12px; color:var(--text-light);">मिति: ${toNepaliDigits(n.publish_date.split('T')[0])}</span>
+                                ${n.content ? `<p style="margin-top:10px;">${n.content}</p>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+            } catch (e) { console.log('Using fallback data'); }
+        }
+    </script>
+</body>
+</html>

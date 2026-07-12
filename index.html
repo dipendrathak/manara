@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मनराशिसवा नगरपालिका | शिक्षा, स्वास्थ्य, कृषि र पुर्वाधार: समृद्धिको आधार</title>
+    <meta name="description" content="मनराशिसवा नगरपालिका, महोत्तरी, मधेश प्रदेश - आधिकारिक वेबसाइट">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Leaflet Fullscreen CSS -->
+    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="header-container"></div>
+    
+    <!-- 1. News Ticker -->
+    <div class="news-ticker-wrapper">
+        <div class="ticker-label">ताजा अपडेट:</div>
+        <div class="news-ticker">
+            <div class="ticker-content" id="ticker-content">
+                <!-- Loaded via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Hero Image Slider (loaded from DB) -->
+    <div class="hero-slider" id="hero-slider" style="display:none;"></div>
+
+    <!-- 3. Quick Stats Bar -->
+    <div style="background: var(--primary-dark); padding: 30px 0; color: white;">
+        <div class="container grid-4 text-center">
+            <div>
+                <h3 style="font-size:36px; margin:0; color:var(--secondary);" id="stat-population">५२,१९१</h3>
+                <p>जनसंख्या</p>
+            </div>
+            <div>
+                <h3 style="font-size:36px; margin:0; color:var(--secondary);" id="stat-area">४९.७८</h3>
+                <p>क्षेत्रफल (वर्ग कि.मि.)</p>
+            </div>
+            <div>
+                <h3 style="font-size:36px; margin:0; color:var(--secondary);" id="stat-wards">१०</h3>
+                <p>वडा संख्या</p>
+            </div>
+            <div>
+                <h3 style="font-size:36px; margin:0; color:var(--secondary);" id="stat-households">८,५४१</h3>
+                <p>घरपरिवार</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3.5 Emergency Contacts -->
+    <div style="background: var(--danger); padding: 15px 0; color: white;" data-aos="fade-in">
+        <div class="container exact-flex-between">
+            <span style="font-weight: 700; font-size: 18px;">🚨 आपतकालीन सम्पर्क नम्बरहरू:</span>
+            <div style="display: flex; gap: 20px; font-weight: 600;">
+                <span>प्रहरी: १००</span>
+                <span>दमकल: १०१</span>
+                <span>एम्बुलेन्स: १०२</span>
+                <span>नगर प्रहरी: ९८५४०३३१०३</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Brief Introduction & 5. Mayor/Deputy -->
+    <div class="section container" data-aos="fade-up">
+        <div class="grid-2">
+            <!-- Intro & Mayor Message -->
+            <div>
+                <h2 class="section-title">संक्षिप्त परिचय</h2>
+                <p style="text-align: justify; font-size: 16px; margin-bottom: 20px; color: var(--text);" id="intro-paragraph" data-fallback="मधेश प्रदेशअन्तर्गत महोत्तरी जिल्लामा अवस्थित मनराशिस्वा नगरपालिका प्राकृतिक सौन्दर्य, सांस्कृतिक वैभव, र आर्थिक सम्भावनाले भरिपूर्ण एक समृद्ध नगर हो। यो नगरपालिका शिसवा कटैया, बथनाहा, साढाँ, सरपल्लो, मनरा, ईटहर्वा कटी, र सोनैल गरी ७ वटा साविकका गाविसहरू समेटेर स्थापित भएको छ।"></p>
+                <a href="#" class="btn btn-outline" style="margin-bottom: 30px;">थप जान्नुहोस्</a>
+
+                <div class="card" style="background: var(--accent); border-left: 5px solid var(--primary); padding: 25px;">
+                    <h3 style="color: var(--primary); margin-bottom: 15px;">नगर प्रमुखको भनाइ</h3>
+                    <p style="font-style: italic; color: var(--text-light); text-align: justify;">
+                        "हाम्रो मनराशिसवा नगरपालिकालाई एक नमुना नगर बनाउने हाम्रो अभियानमा सम्पूर्ण नगरवासीको साथ र सहयोगको अपेक्षा राख्दछु। शिक्षा, स्वास्थ्य र कृषिलाई प्राथमिकतामा राखेर हामी विकासको पथमा अघि बढिरहेका छौं।"
+                    </p>
+                    <div style="margin-top: 15px; font-weight: bold; color: var(--primary); text-align: right;">- नगर प्रमुख</div>
+                </div>
+            </div>
+            
+            <!-- Officials Grid -->
+            <div class="grid-2" style="align-content: start;">
+                <div class="profile-card top-official" id="mayor-card" style="display:none; padding: 20px;"></div>
+                <div class="profile-card top-official" id="deputy-card" style="display:none; padding: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Notices & News -->
+    <div class="section" style="background: var(--bg);" data-aos="fade-up">
+        <div class="container grid-2">
+            <div>
+                <h2 class="section-title">सूचना तथा समाचार</h2>
+                <div class="notice-list" id="home-notices"></div>
+                <div style="margin-top: 20px;">
+                    <a href="notices.html" class="btn btn-outline">सबै सूचना हेर्नुहोस्</a>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="section-title" style="border-left-color: var(--warning);">सार्वजनिक खरिद/बोलपत्र</h2>
+                <div class="notice-list" id="home-tenders"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Services -->
+    <div class="section container text-center" data-aos="fade-up">
+        <h2 class="section-title" style="display: inline-block;">हाम्रा सेवाहरू</h2>
+        <div class="grid-3" style="text-align: left; margin-top: 30px;" id="home-services">
+            <div class="card service-card">
+                <div class="service-icon">📝</div>
+                <h3>घटना दर्ता</h3>
+                <p>जन्म, मृत्यु, विवाह, बसाइँसराइ र सम्बन्धविच्छेद दर्ता सम्बन्धी सेवा।</p>
+                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">🛡️</div>
+                <h3>सामाजिक सुरक्षा</h3>
+                <p>वृद्ध भत्ता, एकल महिला भत्ता, अपाङ्गता भत्ता सम्बन्धी सेवा।</p>
+                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">📋</div>
+                <h3>नागरिक वडापत्र</h3>
+                <p>नगरपालिकाबाट प्रदान गरिने सेवाहरुको विवरण र प्रक्रिया।</p>
+                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">🏥</div>
+                <h3>स्वास्थ्य व्यवस्थापन</h3>
+                <p>स्वास्थ्य चौकी, खोप केन्द्र र एम्बुलेन्स सेवा सम्बन्धी जानकारी।</p>
+                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">💰</div>
+                <h3>कर तथा शुल्क</h3>
+                <p>सम्पत्ति कर, भूमि कर, व्यवसाय कर भुक्तानी विवरण।</p>
+                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">📦</div>
+                <h3>सार्वजनिक खरिद</h3>
+                <p>नगरपालिकाको ठेक्कापट्टा तथा बोलपत्र सम्बन्धी सूचना।</p>
+                <a href="notices.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Procedures & Laws & 9. Gallery -->
+    <div class="section" style="background: var(--bg);" data-aos="fade-up">
+        <div class="container grid-2">
+            <div>
+                <h2 class="section-title">कार्यविधि तथा ऐन कानुन</h2>
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="tab-laws">ऐन/कार्यविधि</button>
+                        <button class="tab-btn" data-tab="tab-reports">प्रतिवेदन</button>
+                    </div>
+                    <div class="tab-content active" id="tab-laws">
+                        <ul style="list-style: none;" id="home-docs"></ul>
+                        <a href="documents.html" class="btn btn-outline btn-sm">सबै कानुन हेर्नुहोस्</a>
+                    </div>
+                    <div class="tab-content" id="tab-reports">
+                        <ul style="list-style: none;" id="home-reports"></ul>
+                        <a href="reports.html" class="btn btn-outline btn-sm">सबै प्रतिवेदन हेर्नुहोस्</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="section-title">फोटो ग्यालरी</h2>
+                    <a href="gallery.html" class="btn btn-outline btn-sm" style="margin-bottom: 40px;">सबै हेर्नुहोस्</a>
+                </div>
+                <div class="grid-2" style="gap: 15px;" id="home-gallery"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Custom Sections (Auto-generated) -->
+    <div id="dynamic-home-sections" class="container" style="margin-top: 40px;"></div>
+
+    <!-- 10. Contact Section -->
+    <div class="section container" data-aos="fade-up">
+        <h2 class="section-title text-center" style="display: block;">सम्पर्क गर्नुहोस्</h2>
+        <div class="grid-2 card" style="margin-top: 30px; padding: 0; overflow: hidden;">
+            <div style="padding: 40px;">
+                <h3 style="margin-bottom: 20px;">गुनासो / सुझाव फारम</h3>
+                <form id="contact-form">
+                    <div class="form-group">
+                        <label for="contact-name">पूरा नाम *</label>
+                        <input id="contact-name" type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="contact-phone">फोन नम्बर *</label>
+                            <input id="contact-phone" type="text" class="form-control" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-email">ईमेल</label>
+                            <input id="contact-email" type="email" class="form-control" name="email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-subject">विषय *</label>
+                        <input id="contact-subject" type="text" class="form-control" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-message">सन्देश *</label>
+                        <textarea id="contact-message" class="form-control" name="message" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">पठाउनुहोस्</button>
+                </form>
+            </div>
+            <div style="display:flex; flex-direction:column; height: 100%; min-height: 450px; position: relative;">
+                <div id="contact-map" style="flex: 1; width: 100%;"></div>
+                
+                <div class="routing-panel-glass" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 85%; max-width: 360px; padding: 16px 20px; border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,0.3); text-align: center;">
+                    <h4 style="margin-bottom: 6px; font-size: 15px;">🗺️ तपाईंको स्थानबाट नगरपालिका सम्मको बाटो</h4>
+                    <p style="font-size: 12px; margin-bottom: 10px;">नक्सामा बाटो हेर्न कृपया लोकेशन अनुमति दिनुहोस्।</p>
+                    <button class="btn btn-primary btn-routing" onclick="getRouteToMunicipality()" style="width: 100%; background: linear-gradient(135deg, var(--secondary), var(--secondary-light)); color: var(--primary-dark); font-weight: 700; border: none;"><span class="btn-text">📍 बाटो खोज्नुहोस्</span></button>
+                </div>
+                <div id="route-info-container" style="position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"></script>
+    <!-- AOS Animation JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Leaflet Fullscreen JS -->
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 50
+        });
+
+        initPage('home');
+
+        function updateNepaliTime() {
+            const timeSpan = document.getElementById('nepali-datetime');
+            if (timeSpan) {
+                // Using standard ne-NP locale for formatting
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                timeSpan.textContent = now.toLocaleDateString('ne-NP', options);
+            }
+        }
+        setInterval(updateNepaliTime, 1000);
+        
+        let contactMap, routingControl;
+        let slideIndex = 0;
+        let slideTimer;
+
+        function showSlides() {
+            const slides = document.querySelectorAll('.slide');
+            if(slides.length === 0) return;
+            slides.forEach(s => s.classList.remove('active'));
+            slideIndex++;
+            if (slideIndex > slides.length) { slideIndex = 1; }
+            slides[slideIndex - 1].classList.add('active');
+            slideTimer = setTimeout(showSlides, 5000);
+        }
+        
+        // Initialize Contact Map
+        let userMarker = null;
+        let deviceHeading = 0;
+
+        let hasAbsoluteListener = false;
+        function setupOrientationListeners() {
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientationabsolute', (e) => {
+                    hasAbsoluteListener = true;
+                    handleOrientation(e);
+                }, true);
+
+                window.addEventListener('deviceorientation', (e) => {
+                    if (hasAbsoluteListener) return;
+                    handleOrientation(e);
+                }, true);
+            }
+        }
+
+        function handleOrientation(event) {
+            let heading = 0;
+            if (event.webkitCompassHeading) {
+                heading = event.webkitCompassHeading;
+            } else if (event.alpha !== null && event.alpha !== undefined) {
+                heading = 360 - event.alpha;
+            } else {
+                return;
+            }
+
+            if (isNaN(heading)) return;
+            deviceHeading = heading;
+
+            // Rotate user direction arrow on map via stable ID
+            const arrow = document.getElementById('user-direction-arrow');
+            if (arrow) {
+                arrow.style.transform = `rotate(${deviceHeading}deg)`;
+            }
+            // Rotate compass needle (needs negative angle to stay pointing North)
+            const compassNeedle = document.getElementById('compass-needle');
+            if (compassNeedle) {
+                compassNeedle.style.transform = `rotate(${-deviceHeading}deg)`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            contactMap = L.map('contact-map', {
+                fullscreenControl: true,
+                fullscreenControlOptions: { position: 'topleft' }
+            }).setView([26.66699, 85.76615], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(contactMap);
+            L.marker([26.66699, 85.76615]).addTo(contactMap).bindPopup('<b>मनराशिसवा नगरपालिका</b>').openPopup();
+
+            // Custom Time Control on Map
+            const MapTimeControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function () {
+                    const div = L.DomUtil.create('div', 'map-time-control');
+                    div.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                    div.style.padding = '8px 12px';
+                    div.style.borderRadius = '8px';
+                    div.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
+                    div.style.fontWeight = 'bold';
+                    div.style.color = '#0d3b1e';
+                    div.style.fontSize = '14px';
+                    div.style.border = '1px solid rgba(0,0,0,0.1)';
+                    div.id = 'map-live-time';
+                    return div;
+                }
+            });
+            contactMap.addControl(new MapTimeControl());
+
+            setInterval(() => {
+                const mapTimeSpan = document.getElementById('map-live-time');
+                if(mapTimeSpan) {
+                    mapTimeSpan.innerHTML = '🕒 ' + new Date().toLocaleTimeString('ne-NP');
+                }
+            }, 1000);
+
+            // SVG Compass Control (topright to avoid overlap with routing panel)
+            const CompassControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function () {
+                    const div = L.DomUtil.create('div', 'map-compass-widget');
+                    div.innerHTML = `
+                        <svg id="compass-needle" width="44" height="44" viewBox="0 0 44 44" style="display:block; transition: transform 0.3s ease-out;">
+                            <circle cx="22" cy="22" r="20" fill="rgba(255,255,255,0.95)" stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>
+                            <!-- North needle (red) -->
+                            <polygon points="22,4 18,22 22,19 26,22" fill="#DC143C"/>
+                            <!-- South needle (dark) -->
+                            <polygon points="22,40 18,22 22,25 26,22" fill="#333"/>
+                            <!-- Center dot -->
+                            <circle cx="22" cy="22" r="3" fill="#d4a843" stroke="white" stroke-width="1"/>
+                            <!-- N label -->
+                            <text x="22" y="14" text-anchor="middle" font-size="7" font-weight="700" fill="#DC143C" font-family="Inter, sans-serif">N</text>
+                        </svg>
+                    `;
+                    div.title = 'Compass (Click to recenter)';
+                    L.DomEvent.disableClickPropagation(div);
+                    div.onclick = function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if(userMarker) {
+                            contactMap.flyTo(userMarker.getLatLng(), 15, {animate: true, duration: 1});
+                        } else {
+                            contactMap.flyTo([26.66699, 85.76615], 13, {animate: true, duration: 1});
+                        }
+                    };
+                    return div;
+                }
+            });
+            contactMap.addControl(new CompassControl());
+
+            // Handle contact form
+            document.getElementById('contact-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                try {
+                    const res = await fetch(API_URL + '/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        showToast('सन्देश सफलतापूर्वक पठाइयो। धन्यवाद !', 'success');
+                        e.target.reset();
+                    } else {
+                        showToast('सन्देश पठाउन असफल भयो।', 'error');
+                    }
+                } catch (err) {
+                    showToast('सर्भर त्रुटि।', 'error');
+                }
+            });
+
+            // Fetch dynamic data if API is available
+            fetchDynamicData();
+        });
+
+        function getRouteToMunicipality() {
+            const btn = document.querySelector('.btn-routing');
+            if(btn) btn.classList.add('loading');
+
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                if(btn) btn.classList.remove('loading');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition((position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                const munLat = 26.66699;
+                const munLng = 85.76615;
+
+                if (routingControl) {
+                    contactMap.removeControl(routingControl);
+                }
+
+                const customUserIcon = L.divIcon({
+                    className: 'user-directional-marker',
+                    html: '<div id="user-direction-arrow" style="width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-bottom:30px solid #4285F4; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4)); transform-origin:center 18px; transition:transform 0.1s ease-out;"></div>',
+                    iconSize: [24, 30],
+                    iconAnchor: [12, 18]
+                });
+
+                if(userMarker) contactMap.removeLayer(userMarker);
+                userMarker = L.marker([userLat, userLng], {icon: customUserIcon}).addTo(contactMap);
+
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(userLat, userLng),
+                        L.latLng(munLat, munLng)
+                    ],
+                    routeWhileDragging: true,
+                    createMarker: function() { return null; }, // Hide default markers from routing to prevent duplicate user marker
+                    router: L.Routing.osrmv1({
+                        serviceUrl: 'https://router.project-osrm.org/route/v1',
+                        profile: 'driving'
+                    })
+                }).addTo(contactMap);
+
+                // Listen for route found to display distance/time info
+                routingControl.on('routesfound', function(e) {
+                    const route = e.routes[0];
+                    const distKm = (route.summary.totalDistance / 1000).toFixed(1);
+                    const timeMin = Math.round(route.summary.totalTime / 60);
+                    const infoContainer = document.getElementById('route-info-container');
+                    if (infoContainer) {
+                        infoContainer.style.display = 'block';
+                        infoContainer.innerHTML = `
+                            <div class="route-info-card">
+                                <div class="stat">
+                                    <div class="stat-value">${distKm} km</div>
+                                    <div class="stat-label">दूरी</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">${timeMin} min</div>
+                                    <div class="stat-label">अनुमानित समय</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Use watchPosition for continuous GPS updates
+                navigator.geolocation.watchPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lng]);
+                        // Update rotation if pos contains valid heading from GPS movement
+                        if (pos.coords.heading !== null && pos.coords.heading !== undefined && !isNaN(pos.coords.heading)) {
+                            const arrow = document.getElementById('user-direction-arrow');
+                            if (arrow) {
+                                arrow.style.transform = `rotate(${pos.coords.heading}deg)`;
+                            }
+                        }
+                    }
+                }, null, { enableHighAccuracy: true });
+                
+                contactMap.flyTo([userLat, userLng], 14, {animate: true, duration: 1.5});
+                showToast('तपाईंको स्थानबाट नगरपालिकाको मार्ग खोजिँदैछ...', 'success');
+                if(btn) btn.classList.remove('loading');
+            }, () => {
+                alert('Unable to retrieve your location. Please allow location access.');
+                if(btn) btn.classList.remove('loading');
+            });
+        }
+
+        async function fetchDynamicData() {
+            try {
+                // Slides
+                const slides = await api('/slides');
+                const sliderContainer = document.getElementById('hero-slider');
+                if (slides && slides.length > 0) {
+                    sliderContainer.style.display = 'block';
+                    let slideHTML = '';
+                    slides.forEach((s, idx) => {
+                        slideHTML += `
+                            <div class="slide ${idx === 0 ? 'active' : ''}" style="background-image: url('${s.image_url}')">
+                                <div class="slide-content" data-aos="zoom-in" data-aos-duration="1000">
+                                    <h2>${s.title}</h2>
+                                    <p>${s.subtitle || ''}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    sliderContainer.innerHTML = slideHTML;
+                    // Start slider
+                    clearTimeout(slideTimer);
+                    slideTimer = setTimeout(showSlides, 5000);
+                } else {
+                    sliderContainer.style.display = 'none';
+                }
+
+                // Officials
+                const officials = await api('/officials');
+                if (officials && officials.length > 0) {
+                    const mayor = officials.find(o => o.designation.includes('प्रमुख') && !o.designation.includes('उप'));
+                    const deputy = officials.find(o => o.designation.includes('उप प्रमुख'));
+
+                    if (mayor) {
+                        const mayorCard = document.getElementById('mayor-card');
+                        mayorCard.style.display = '';
+                        mayorCard.innerHTML = `
+                            ${mayor.image_url ? `<img src="${mayor.image_url}" alt="${mayor.name}" class="profile-img">` : ''}
+                            <h3 class="profile-name">${mayor.name}</h3>
+                            <p class="profile-designation">${mayor.designation}</p>
+                            <div class="profile-details">
+                                <p>📞 ${toNepaliDigits(mayor.phone) || '-'}</p>
+                                <p style="word-break: break-all;">✉️ <a href="mailto:${mayor.email || ''}">${mayor.email || '-'}</a></p>
+                            </div>
+                        `;
+                    }
+                    if (deputy) {
+                        const deputyCard = document.getElementById('deputy-card');
+                        deputyCard.style.display = '';
+                        deputyCard.innerHTML = `
+                            ${deputy.image_url ? `<img src="${deputy.image_url}" alt="${deputy.name}" class="profile-img">` : ''}
+                            <h3 class="profile-name">${deputy.name}</h3>
+                            <p class="profile-designation">${deputy.designation}</p>
+                            <div class="profile-details">
+                                <p>📞 ${toNepaliDigits(deputy.phone) || '-'}</p>
+                                <p style="word-break: break-all;">✉️ <a href="mailto:${deputy.email || ''}">${deputy.email || '-'}</a></p>
+                            </div>
+                        `;
+                    }
+                }
+
+                // Intro paragraph (from DB)
+                const settings = await api('/settings');
+                if (settings) {
+                    const p = document.getElementById('intro-paragraph');
+                    const intro = settings.site_intro || settings.intro_text || p?.dataset?.fallback || '';
+                    if (p && intro) p.textContent = intro;
+                }
+
+                // Stats
+                const stats = await api('/stats/public');
+                if (stats) {
+                    // hide entire bar when all stats are 0
+                    const allZero = (!stats.population || Number(stats.population) === 0) &&
+                                    (!stats.area || Number(stats.area) === 0) &&
+                                    (!stats.wards || Number(stats.wards) === 0) &&
+                                    (!stats.households || Number(stats.households) === 0);
+                    if (allZero) {
+                        document.querySelector('[style="background: var(--primary-dark); padding: 30px 0; color: white;"]').style.display = 'none';
+                    } else {
+                        if (stats.population) document.getElementById('stat-population').textContent = toNepaliDigits(stats.population);
+                        if (stats.area) document.getElementById('stat-area').textContent = toNepaliDigits(stats.area);
+                        if (stats.wards) document.getElementById('stat-wards').textContent = toNepaliDigits(stats.wards);
+                        if (stats.households) document.getElementById('stat-households').textContent = toNepaliDigits(stats.households);
+                    }
+                }
+                
+                // Services
+                const services = await api('/services');
+                if (services && services.length > 0) {
+                    const servicesContainer = document.getElementById('home-services');
+                    servicesContainer.innerHTML = '';
+                    services.slice(0, 6).forEach(s => {
+                        servicesContainer.innerHTML += `
+                            <div class="card service-card">
+                                <div class="service-icon">${s.icon || '📌'}</div>
+                                <h3>${s.title}</h3>
+                                <p>${s.description || ''}</p>
+                                <a href="services.html" class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</a>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Notices & Tenders
+                const notices = await api('/notices');
+                if (notices && notices.length > 0) {
+                    const noticesContainer = document.getElementById('home-notices');
+                    const tendersContainer = document.getElementById('home-tenders');
+                    noticesContainer.innerHTML = '';
+                    tendersContainer.innerHTML = '';
+                    
+                    const regularNotices = notices.filter(n => n.notice_type !== 'procurement');
+                    const tenders = notices.filter(n => n.notice_type === 'procurement');
+                    
+                    regularNotices.slice(0, 4).forEach(n => {
+                        let badgeClass = 'badge-notice', badgeText = 'सूचना';
+                        if(n.notice_type === 'urgent') { badgeClass = 'badge-urgent'; badgeText = 'अत्यन्त जरुरी'; }
+                        if(n.notice_type === 'news') { badgeClass = 'badge-news'; badgeText = 'समाचार'; }
+                        
+                        noticesContainer.innerHTML += `
+                            <div class="notice-item">
+                                <span class="badge ${badgeClass}">${badgeText}</span>
+                                <a href="notices.html" style="font-weight:600; font-size:18px;">${n.title}</a>
+                                <span style="font-size:12px; color:var(--text-light);">${toNepaliDigits(n.publish_date.split('T')[0])}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    tenders.slice(0, 3).forEach(n => {
+                        tendersContainer.innerHTML += `
+                            <div class="notice-item">
+                                <span class="badge badge-procurement">बोलपत्र</span>
+                                <a href="notices.html" style="font-weight:600; font-size:18px;">${n.title}</a>
+                                <span style="font-size:12px; color:var(--text-light);">${toNepaliDigits(n.publish_date.split('T')[0])}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Docs
+                const docs = await api('/documents');
+                if (docs && docs.data && docs.data.length > 0) {
+                    const docsContainer = document.getElementById('home-docs');
+                    docsContainer.innerHTML = '';
+                    docs.data.slice(0, 4).forEach(d => {
+                        docsContainer.innerHTML += `
+                            <li style="padding: 15px; background: white; margin-bottom: 10px; border-radius: var(--radius-sm); border-left: 4px solid var(--primary); display: flex; align-items: center; gap: 15px;">
+                                <div style="font-size: 24px;">📄</div>
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0;"><a href="documents.html">${d.title}</a></h4>
+                                    <span style="font-size: 12px; color: #666;">${d.publish_date ? toNepaliDigits(d.publish_date.split('T')[0]) : ''}</span>
+                                </div>
+                            </li>
+                        `;
+                    });
+                }
+
+                // Gallery
+                const gallery = await api('/gallery');
+                if (gallery && gallery.length > 0) {
+                    const galleryContainer = document.getElementById('home-gallery');
+                    galleryContainer.innerHTML = '';
+                    gallery.slice(0, 4).forEach(g => {
+                        galleryContainer.innerHTML += `
+                            <img src="${g.image_url}" alt="${g.title}" style="border-radius: var(--radius-sm); object-fit: cover; width: 100%; height: 180px; box-shadow: var(--shadow);">
+                        `;
+                    });
+                }
+                
+                // Dynamic Sections
+                const dynTables = await api('/dynamic/tables');
+                if (dynTables && dynTables.length > 0) {
+                    const container = document.getElementById('dynamic-home-sections');
+                    const publicTables = dynTables.filter(t => t.is_public);
+                    
+                    for (let table of publicTables) {
+                        const data = await api(`/dynamic/data/${table.table_name}`);
+                        if (data && data.length > 0) {
+                            const schema = await api(`/dynamic/schema/${table.table_name}`);
+                            const imgCol = schema.columns.find(c => c.column_type === 'image');
+                            const primaryCol = schema.columns[0];
+                            
+                            let html = `
+                            <div class="section">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h2 class="section-title">${table.icon || '📁'} ${table.display_name}</h2>
+                                    <a href="dynamic-data.html?table=${table.table_name}" class="btn btn-outline btn-sm" style="margin-bottom: 40px;">सबै हेर्नुहोस्</a>
+                                </div>
+                                <div class="grid-4">`;
+                                
+                            data.slice(0, 4).forEach(row => {
+                                html += `<div class="card service-card" style="padding:15px; text-align:left;">`;
+                                if (imgCol && row[imgCol.column_name]) {
+                                    html += `<img src="${row[imgCol.column_name]}" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;">`;
+                                }
+                                html += `<h4 style="margin:0 0 10px 0;">${row[primaryCol.column_name] || 'रेकर्ड'}</h4>`;
+                                html += `<a href="dynamic-data.html?table=${table.table_name}" style="font-size:14px; font-weight: 600;">थप विवरण →</a>`;
+                                html += `</div>`;
+                            });
+                            
+                            html += `</div></div>`;
+                            container.innerHTML += html;
+                        }
+                    }
+                }
+                
+                // Refresh AOS after DOM updates
+                if (typeof AOS !== 'undefined') {
+                    setTimeout(() => AOS.refresh(), 300);
+                }
+                
+            } catch (e) {
+                console.log('Using fallback data due to API error', e);
+            }
+        }
+    </script>
+</body>
+</html>

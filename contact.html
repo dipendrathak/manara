@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>सम्पर्क | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <span>सम्पर्क</span>
+        </div>
+        
+        <h2 class="section-title">सम्पर्क (Contact)</h2>
+        
+        <div class="grid-2 card" style="padding:0; overflow:hidden;">
+            <div style="padding: 40px;">
+                <h3 style="margin-bottom: 20px;">गुनासो / सुझाव फारम</h3>
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label>पूरा नाम *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>फोन नम्बर *</label>
+                            <input type="text" class="form-control" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>ईमेल</label>
+                            <input type="email" class="form-control" name="email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>विषय *</label>
+                        <input type="text" class="form-control" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label>सन्देश *</label>
+                        <textarea class="form-control" name="message" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">पठाउनुहोस्</button>
+                </form>
+            </div>
+            <div style="background:var(--bg); display:flex; flex-direction:column;">
+                <div style="padding: 40px; flex:1;">
+                    <h3 style="margin-bottom: 20px;">कार्यालय विवरण</h3>
+                    <p style="font-size:18px; margin-bottom:10px;"><strong>मनराशिसवा नगरपालिका</strong></p>
+                    <p style="margin-bottom:10px;">📍 महोत्तरी, मधेश प्रदेश, नेपाल</p>
+                    <p style="margin-bottom:10px;">📞 +977-9854033103</p>
+                    <p style="margin-bottom:10px;">✉️ manarasishwamun.gov@gmail.com</p>
+                    <p style="margin-bottom:20px;">🕒 कार्यालय समय: आइतवार - शुक्रवार, १०:०० - ५:०० बजे</p>
+                    
+                    <div id="contactMap" style="height: 300px; border-radius: var(--radius-sm); z-index:1;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="footer-container"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('contact');
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const map = L.map('contactMap').setView([26.66699, 85.76615], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.marker([26.66699, 85.76615]).addTo(map).bindPopup('<b>मनराशिसवा नगरपालिका</b>').openPopup();
+
+            document.getElementById('contactForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                try {
+                    const res = await fetch(API_URL + '/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        showToast('सन्देश सफलतापूर्वक पठाइयो। धन्यवाद !', 'success');
+                        e.target.reset();
+                    } else {
+                        showToast('सन्देश पठाउन असफल भयो।', 'error');
+                    }
+                } catch (err) {
+                    showToast('सर्भर त्रुटि।', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

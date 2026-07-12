@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>कर्मचारी विवरण | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <a href="#">परिचय</a> <span>></span>
+            <span>कर्मचारी विवरण</span>
+        </div>
+        
+        <h2 class="section-title">कर्मचारी विवरण (Staff Details)</h2>
+        
+        <div class="filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="नाम वा पदबाट खोज्नुहोस्..." onkeyup="filterCards()">
+            </div>
+            <select id="sectionFilter" class="form-control" style="width: auto;" onchange="filterCards()">
+                <option value="">सबै शाखाहरू</option>
+                <option value="प्रशासन">प्रशासन (Administration)</option>
+                <option value="लेखा">लेखा (Accounting)</option>
+                <option value="प्राविधिक">प्राविधिक (Technical)</option>
+                <option value="शिक्षा">शिक्षा (Education)</option>
+                <option value="स्वास्थ्य">स्वास्थ्य (Health)</option>
+            </select>
+        </div>
+        
+        <div class="grid-3" id="staffGrid">
+            <!-- Fallback Data -->
+            <div class="profile-card staff-card" data-section="प्रशासन">
+                <img src="https://picsum.photos/200/200?random=1" class="profile-img" alt="Staff Photo">
+                <h3 class="profile-name">राम कुमार शर्मा</h3>
+                <p class="profile-designation">प्रमुख प्रशासकीय अधिकृत</p>
+                <div class="profile-details">
+                    <p>🏢 प्रशासन शाखा</p>
+                    <p>📞 ९८००००००००</p>
+                    <p>✉️ <a href="mailto:cao@manarashiswamun.gov.np">cao@manarashiswamun.gov.np</a></p>
+                </div>
+                <button class="btn view-profile-btn" onclick="openStaffModal(1, 'राम कुमार शर्मा', 'प्रमुख प्रशासकीय अधिकृत', 'प्रशासन', '९८००००००००', 'cao@manarashiswamun.gov.np', 'https://picsum.photos/200/200?random=1')">विस्तृत विवरण हेर्नुहोस्</button>
+            </div>
+            
+            <div class="profile-card staff-card" data-section="लेखा">
+                <img src="https://picsum.photos/200/200?random=2" class="profile-img" alt="Staff Photo">
+                <h3 class="profile-name">हरि प्रसाद दाहाल</h3>
+                <p class="profile-designation">लेखा अधिकृत</p>
+                <div class="profile-details">
+                    <p>🏢 लेखा शाखा</p>
+                    <p>📞 ९८०००००००१</p>
+                    <p>✉️ <a href="mailto:account@manarashiswamun.gov.np">account@manarashiswamun.gov.np</a></p>
+                </div>
+                <button class="btn view-profile-btn" onclick="openStaffModal(2, 'हरि प्रसाद दाहाल', 'लेखा अधिकृत', 'लेखा', '९८०००००००१', 'account@manarashiswamun.gov.np', 'https://picsum.photos/200/200?random=2')">विस्तृत विवरण हेर्नुहोस्</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Global Staff Modal -->
+    <div id="staffModal" class="profile-modal">
+        <div class="profile-modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-header-info">
+                <img id="modalImg" src="" class="profile-img-large" alt="Profile Photo">
+                <h2 id="modalName" style="margin-bottom: 5px;"></h2>
+                <h3 id="modalDesignation" style="color: var(--danger); font-style: italic;"></h3>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>शाखा (Section)</h4>
+                    <p id="modalSection"></p>
+                </div>
+                <div class="info-item">
+                    <h4>सम्पर्क नम्बर (Phone)</h4>
+                    <p id="modalPhone"></p>
+                </div>
+                <div class="info-item">
+                    <h4>ईमेल (Email)</h4>
+                    <p id="modalEmail"></p>
+                </div>
+                <div class="info-item">
+                    <h4>कर्मचारी तह (Level)</h4>
+                    <p id="modalLevel">अधिकृत स्तर (Officer Level)</p>
+                </div>
+            </div>
+            
+            <div class="bio-section">
+                <h3>संक्षिप्त परिचय (Bio)</h3>
+                <p id="modalBio">थप विवरण उपलब्ध छैन। (More details are not available at the moment.)</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('about');
+        
+        let allStaffData = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const staff = await api('/staff');
+                if (staff && staff.length > 0) {
+                    allStaffData = staff;
+                    renderStaffGrid(staff);
+                }
+            } catch (e) { 
+                console.log('Using fallback', e); 
+            }
+        });
+
+        function renderStaffGrid(staffArray) {
+            const grid = document.getElementById('staffGrid');
+            grid.innerHTML = '';
+            
+            staffArray.forEach(s => {
+                const imgUrl = s.image_url || `https://picsum.photos/200/200?random=${s.id}`;
+                const safeName = s.name.replace(/'/g, "\\'");
+                const safeDesig = s.designation.replace(/'/g, "\\'");
+                const safeSec = (s.section || '').replace(/'/g, "\\'");
+                
+                grid.innerHTML += `
+                    <div class="profile-card staff-card" data-section="${s.section || ''}">
+                        <img src="${imgUrl}" class="profile-img" alt="${s.name}">
+                        <h3 class="profile-name">${s.name}</h3>
+                        <p class="profile-designation">${s.designation}</p>
+                        <div class="profile-details">
+                            <p>🏢 ${s.section || 'N/A'}</p>
+                            <p>📞 ${toNepaliDigits(s.phone) || '-'}</p>
+                            <p>✉️ <a href="mailto:${s.email || ''}">${s.email || '-'}</a></p>
+                        </div>
+                        <button class="btn view-profile-btn" onclick="openStaffModal(${s.id}, '${safeName}', '${safeDesig}', '${safeSec}', '${s.phone || ''}', '${s.email || ''}', '${imgUrl}')">विस्तृत विवरण हेर्नुहोस्</button>
+                    </div>
+                `;
+            });
+        }
+
+        function filterCards() {
+            const query = document.getElementById("searchInput").value.toUpperCase();
+            const section = document.getElementById("sectionFilter").value;
+            const cards = document.querySelectorAll('.staff-card');
+            
+            cards.forEach(card => {
+                const name = card.querySelector('.profile-name').innerText.toUpperCase();
+                const designation = card.querySelector('.profile-designation').innerText.toUpperCase();
+                const cardSection = card.getAttribute('data-section') || '';
+                
+                const matchesQuery = name.includes(query) || designation.includes(query);
+                const matchesSection = section === "" || cardSection === section;
+                
+                if (matchesQuery && matchesSection) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function openStaffModal(id, name, designation, section, phone, email, imgUrl) {
+            document.getElementById('modalImg').src = imgUrl;
+            document.getElementById('modalName').textContent = name;
+            document.getElementById('modalDesignation').textContent = designation;
+            document.getElementById('modalSection').textContent = section || 'N/A';
+            document.getElementById('modalPhone').textContent = phone ? toNepaliDigits(phone) : '-';
+            document.getElementById('modalEmail').textContent = email || '-';
+            
+            // Try to find the exact staff object to load extended fields if they exist in DB
+            const staffObj = allStaffData.find(s => s.id === id);
+            if(staffObj) {
+                document.getElementById('modalLevel').textContent = staffObj.level || 'अधिकृत स्तर';
+                document.getElementById('modalBio').textContent = staffObj.bio || 'थप विवरण उपलब्ध छैन।';
+            }
+            
+            window.openProfileModal('staffModal');
+        }
+    </script>
+</body>
+</html>

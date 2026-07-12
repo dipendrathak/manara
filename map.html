@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>नक्सा तथा मार्ग निर्देशन | मनराशिसवा नगरपालिका</title>
+
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Mukta:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <!-- Leaflet Locate Control CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.css" />
+    <!-- Leaflet Fullscreen CSS -->
+    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --primary: #0d3b1e;
+            --primary-light: #1a5c32;
+            --primary-dark: #072813;
+            --secondary: #d4a843;
+            --secondary-light: #e8c36a;
+            --accent: #e8f5e9;
+            --danger: #c0392b;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --text-dark: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #64748b;
+            --bg-glass-dark: rgba(7, 40, 19, 0.85);
+            --bg-glass-light: rgba(255, 255, 255, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.15);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+            --shadow-hover: 0 20px 40px -10px rgba(13, 59, 30, 0.4);
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Mukta', 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            overflow: hidden;
+            background: #0f172a;
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Slim Navigation Header */
+        .top-nav {
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            border-bottom: 2px solid var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            z-index: 2000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .top-nav .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .top-nav .back-btn {
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            transition: var(--transition);
+            font-size: 18px;
+        }
+        .top-nav .back-btn:hover {
+            background: var(--secondary);
+            color: var(--primary-dark);
+            transform: translateX(-3px);
+        }
+        .top-nav .nav-title h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--secondary);
+        }
+        .top-nav .nav-title p {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: -2px;
+        }
+        .top-nav .nav-right {
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.08);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        /* Map and Panel Container */
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            height: calc(100vh - 56px);
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Sidebar (Slide-out) */
+        .sidebar {
+            width: 380px;
+            height: 100%;
+            background: var(--bg-glass-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-glass);
+            z-index: 1000;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(0);
+            transition: var(--transition);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .sidebar.collapsed {
+            transform: translateX(-380px);
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-content::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* Sidebar Toggle Trigger */
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: -40px;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 60px;
+            background: var(--primary-dark);
+            border: 1px solid var(--border-glass);
+            border-left: none;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            color: var(--secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.2);
+            transition: var(--transition);
+            z-index: 1001;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--primary);
+            color: white;
+            width: 45px;
+            right: -45px;
+        }
+
+        /* Floating Search Panel */
+        .floating-search-container {
+            position: absolute;
+            top: 20px;
+            left: 400px;
+            z-index: 1000;
+            width: 400px;
+            transition: var(--transition);
+        }
+        .sidebar.collapsed + .floating-search-container {
+            left: 20px;
+        }
+        .search-bar-wrapper {
+            background: var(--bg-glass-light);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 5px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-premium);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        .search-bar-wrapper input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 18px;
+            font-size: 15px;
+            color: var(--text-dark);
+            outline: none;
+        }
+        .search-bar-wrapper button {
+            border: none;
+            background: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .search-bar-wrapper button:hover {
+            background: var(--secondary);
+            color: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        .suggestions-dropdown {
+            position: absolute;
+            top: 105%;
+            left: 10px;
+            right: 10px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-premium);
+            overflow: hidden;
+            display: none;
+            z-index: 2000;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .suggestion-item {
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .suggestion-item:hover {
+            background: #f8fafc;
+            color: var(--primary);
+            padding-left: 24px;
+        }
+
+        /* Widgets/Panels inside Sidebar */
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        .sidebar-section h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--secondary-light);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--secondary);
+            padding-left: 10px;
+        }
+
+        /* Mode Selectors (Pills) */
+        .mode-selector {
+            display: flex;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50px;
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mode-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            padding: 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .mode-btn.active {
+            background: var(--secondary);
+            color: var(--primary-dark);
+            box-shadow: 0 4px 10px rgba(212, 168, 67, 0.3);
+        }
+
+        /* Input Controls */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+        }
+        .input-wrapper {
+            display: flex;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.15);
+        }
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 12px 14px;
+            color: white;
+            outline: none;
+            font-size: 14px;
+        }
+        .input-wrapper input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        .input-wrapper button {
+            border: none;
+            background: rgba(255,255,255,0.06);
+            color: var(--secondary-light);
+            padding: 0 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+        .input-wrapper button:hover {
+            background: var(--secondary);
+            color: var(--primary-dark);
+        }
+
+        /* Action Buttons */
+        .btn-flex-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn-premium {
+            flex: 1;
+            padding: 12px 18px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary) 100%);
+            color: var(--primary-dark);
+            box-shadow: 0 6px 18px rgba(212, 168, 67, 0.25);
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212, 168, 67, 0.4);
+        }
+        .btn-outline-glass {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+        }
+        .btn-outline-glass:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: white;
+        }
+        .btn-red-glass {
+            background: rgba(192, 57, 43, 0.2);
+            border: 1px solid rgba(192, 57, 43, 0.4);
+            color: #ff7675;
+        }
+        .btn-red-glass:hover {
+            background: rgba(192, 57, 43, 0.4);
+            color: white;
+        }
+
+        /* Layer Switch Cards */
+        .layer-switcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .layer-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .layer-card:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+        }
+        .layer-card.active {
+            border-color: var(--secondary);
+            background: rgba(212, 168, 67, 0.15);
+        }
+        .layer-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .layer-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+        }
+
+        /* Route Results Card */
+        .route-summary-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+            animation: slideInDown 0.3s forwards;
+        }
+        .route-summary-card.show {
+            display: block;
+        }
+        .route-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .route-stat-box {
+            background: rgba(0,0,0,0.2);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .route-stat-box .val {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--secondary-light);
+        }
+        .route-stat-box .lbl {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+        .directions-itinerary {
+            max-height: 220px;
+            overflow-y: auto;
+            border-radius: var(--radius-md);
+            background: rgba(0,0,0,0.15);
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .directions-itinerary ol {
+            padding-left: 20px;
+        }
+        .directions-itinerary li {
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 6px;
+        }
+        .directions-itinerary li:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        /* Floating action buttons (FAB) panel */
+        .fab-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .fab-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: var(--bg-glass-light);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--primary-dark);
+            font-size: 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-premium);
+        }
+        .fab-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .fab-btn.active {
+            background: var(--secondary);
+            color: var(--primary-dark);
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px rgba(212, 168, 67, 0.6);
+        }
+
+        /* Custom Floating Compass Widget */
+        .map-compass-widget {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg-glass-dark);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: var(--shadow-premium);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid var(--border-glass);
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-compass-widget:hover {
+            transform: scale(1.08);
+            border-color: var(--secondary);
+        }
+        #compass-rose-needle {
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: 50px 50px;
+        }
+
+        /* Bottom Floating Coordinates Status Bar */
+        .status-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 400px;
+            right: 130px;
+            z-index: 1000;
+            background: var(--bg-glass-dark);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glass);
+            border-radius: 50px;
+            padding: 10px 24px;
+            color: white;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-premium);
+            transition: var(--transition);
+        }
+        .sidebar.collapsed ~ .status-bar {
+            left: 20px;
+        }
+        .status-bar .bar-sec {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-bar strong {
+            color: var(--secondary-light);
+        }
+        .pulse-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .pulse-indicator.active {
+            background-color: var(--success);
+            animation: pulseGlow 1.5s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(39, 174, 96, 0); }
+        }
+
+        /* Toast Popup Alerts */
+        .toast-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            z-index: 9999;
+            background: var(--primary-dark);
+            border: 1px solid var(--secondary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: var(--shadow-premium);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast-popup.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast-popup.success {
+            border-color: var(--success);
+        }
+        .toast-popup.error {
+            border-color: var(--danger);
+        }
+
+        /* Directional Location Arrow Style */
+        .user-directional-marker {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* Hide Leaflet Route Default Box */
+        .leaflet-routing-container {
+            display: none !important;
+        }
+
+        /* Animated Dash Pattern on Route Line */
+        .route-line-animated {
+            stroke-dasharray: 12, 8;
+            animation: flowDash 30s linear infinite;
+        }
+        @keyframes flowDash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 320px;
+            }
+            .sidebar.collapsed {
+                transform: translateX(-320px);
+            }
+            .floating-search-container {
+                left: 340px;
+                width: 300px;
+            }
+            .status-bar {
+                left: 340px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                width: 280px;
+                height: 100%;
+                z-index: 1005;
+            }
+            .sidebar.collapsed {
+                transform: translateX(-280px);
+            }
+            .floating-search-container {
+                left: 20px;
+                right: 80px;
+                width: auto;
+                top: 15px;
+            }
+            .sidebar.collapsed + .floating-search-container {
+                left: 20px;
+            }
+            .status-bar {
+                left: 20px !important;
+                right: 20px !important;
+                bottom: 15px;
+                flex-direction: column;
+                gap: 5px;
+                border-radius: var(--radius-md);
+                padding: 8px 15px;
+            }
+            .map-compass-widget {
+                bottom: 80px;
+                right: 15px;
+                width: 75px;
+                height: 75px;
+            }
+            .fab-panel {
+                top: 75px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slim Header Bar -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="nav-title">
+                <h1>मनराशिसवा नगरपालिका</h1>
+                <p>भौगोलिक सूचना प्रणाली तथा मार्ग निर्देशन प्रणाली</p>
+            </div>
+        </div>
+        <div class="nav-right" id="live-time">
+            🕒 लोड हुँदैछ...
+        </div>
+    </div>
+
+    <!-- Map & Sidepanel Container -->
+    <div class="viewport-container">
+
+        <!-- Leaflet Map Container -->
+        <div id="map"></div>
+
+        <!-- Left Sidebar Section -->
+        <div class="sidebar" id="sidebar">
+            <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="toggleSidebar()">◀</button>
+            
+            <div class="sidebar-header">
+                <h2>🗺️ नियन्त्रण प्यानल</h2>
+            </div>
+
+            <div class="sidebar-content">
+
+                <!-- Routing Widgets -->
+                <div class="sidebar-section">
+                    <h3>🛣️ मार्ग निर्देशन (Routing)</h3>
+                    
+                    <div class="mode-selector">
+                        <button class="mode-btn active" id="mode-car" onclick="setMode('car')">🚗 सवारी</button>
+                        <button class="mode-btn" id="mode-foot" onclick="setMode('foot')">🚶 पैदल</button>
+                        <button class="mode-btn" id="mode-bike" onclick="setMode('bike')">🚲 साइकल</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>📍 प्रस्थान विन्दु (Origin)</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="originInput" placeholder="स्थान खोज्नुहोस् वा नक्सामा छान्नुहोस्...">
+                            <button onclick="useCurrentLocation('origin')" title="मेरो हालको स्थान प्रयोग गर्नुहोस्">📍</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>🎯 गन्तव्य विन्दु (Destination)</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="destInput" placeholder="स्थान खोज्नुहोस् वा नक्सामा छान्नुहोस्...">
+                            <button onclick="useCurrentLocation('dest')" title="मेरो हालको स्थान प्रयोग गर्नुहोस्">📍</button>
+                        </div>
+                    </div>
+
+                    <div class="btn-flex-row">
+                        <button class="btn-premium btn-outline-glass" onclick="reverseRoute()" title="मार्ग उल्ट्याउनुहोस्">🔁 साट्नुहोस्</button>
+                        <button class="btn-premium btn-red-glass" onclick="clearRouting()">❌ सफा गर्नुहोस्</button>
+                    </div>
+
+                    <button class="btn-premium btn-gold" style="width:100%;" onclick="findRoute()">🛣️ बाटो पत्ता लगाउनुहोस्</button>
+                    <button class="btn-premium btn-outline-glass" style="width:100%; margin-top:10px;" onclick="routeToMunicipality()">🏛️ नगरपालिका जानुहोस्</button>
+
+                    <!-- Route Results Stats and Steps -->
+                    <div class="route-summary-card" id="routeCard">
+                        <div class="route-stats-grid">
+                            <div class="route-stat-box">
+                                <div class="val" id="route-distance">--</div>
+                                <div class="lbl">दुरी (कि.मी)</div>
+                            </div>
+                            <div class="route-stat-box">
+                                <div class="val" id="route-time">--</div>
+                                <div class="lbl">समय (मिनेट)</div>
+                            </div>
+                            <div class="route-stat-box">
+                                <div class="val" id="route-steps">--</div>
+                                <div class="lbl">मोड संख्या</div>
+                            </div>
+                        </div>
+                        <div class="directions-itinerary" id="itinerary">
+                            <ol id="directions-list"></ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer Switcher -->
+                <div class="sidebar-section">
+                    <h3>🗺️ नक्सा लेयरहरू (Map Layers)</h3>
+                    <div class="layer-switcher-grid">
+                        <div class="layer-card active" id="layer-osm" onclick="setLayer('osm')">
+                            <div class="layer-icon">🗺️</div>
+                            <div class="layer-name">OSM डिफल</div>
+                        </div>
+                        <div class="layer-card" id="layer-satellite" onclick="setLayer('satellite')">
+                            <div class="layer-icon">🛰️</div>
+                            <div class="layer-name">स्याटेलाइट</div>
+                        </div>
+                        <div class="layer-card" id="layer-topo" onclick="setLayer('topo')">
+                            <div class="layer-icon">🏔️</div>
+                            <div class="layer-name">टोपोग्राफिक</div>
+                        </div>
+                        <div class="layer-card" id="layer-dark" onclick="setLayer('dark')">
+                            <div class="layer-icon">🌑</div>
+                            <div class="layer-name">डार्क थिम</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geomatics / Measurement Tools -->
+                <div class="sidebar-section">
+                    <h3>📐 नाप उपकरणहरू (GIS Tools)</h3>
+                    <div class="btn-flex-row">
+                        <button class="btn-premium btn-outline-glass" id="measure-btn" onclick="toggleMeasurement()">📏 दुरी नाप्नुहोस्</button>
+                        <button class="btn-premium btn-red-glass" id="clear-measure-btn" onclick="clearMeasurement()">🗑️ सफा</button>
+                    </div>
+                    <div id="measure-result" style="font-size:13px; color:var(--secondary-light); margin-top:5px; font-weight:600; display:none;">
+                        कुल दुरी: <span id="measure-dist">0.00</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Floating Search Panel -->
+        <div class="floating-search-container">
+            <div class="search-bar-wrapper">
+                <input type="text" id="searchInput" placeholder="🔍 नेपालभित्रको स्थान खोज्नुहोस्..." oninput="handleSearchAutocomplete(this.value)">
+                <button onclick="performSearch()">खोज</button>
+            </div>
+            <div class="suggestions-dropdown" id="search-suggestions"></div>
+        </div>
+
+        <!-- Floating Action Buttons -->
+        <div class="fab-panel">
+            <button class="fab-btn" id="tracking-btn" onclick="toggleGPSTracking()" title="मेरो स्थान ट्र्याक गर्नुहोस्">📍</button>
+            <button class="fab-btn" onclick="shareLiveLocation()" title="मेरो लोकेसन सेयर गर्नुहोस्">📤</button>
+        </div>
+
+        <!-- Floating Compass Widget -->
+        <div class="map-compass-widget" onclick="recenterOnUserOrNagarpalika()">
+            <svg width="75" height="75" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(212,168,67,0.3)" stroke-width="2.5"/>
+                <circle cx="50" cy="50" r="41" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                
+                <text x="50" y="16" fill="#d4a843" font-size="13" font-weight="800" text-anchor="middle">N</text>
+                <text x="50" y="93" fill="rgba(255,255,255,0.6)" font-size="11" text-anchor="middle">S</text>
+                <text x="13" y="54" fill="rgba(255,255,255,0.6)" font-size="11" text-anchor="middle">W</text>
+                <text x="87" y="54" fill="rgba(255,255,255,0.6)" font-size="11" text-anchor="middle">E</text>
+
+                <!-- 30 deg ticks -->
+                <line x1="50" y1="4" x2="50" y2="9" stroke="#d4a843" stroke-width="2" />
+                <line x1="50" y1="91" x2="50" y2="96" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+                <line x1="4" y1="50" x2="9" y2="50" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+                <line x1="91" y1="50" x2="96" y2="50" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+                
+                <!-- Rotating dial needle -->
+                <g id="compass-rose-needle">
+                    <polygon points="50,16 44,50 50,44" fill="#e74c3c" />
+                    <polygon points="50,16 56,50 50,44" fill="#c0392b" />
+                    <polygon points="50,84 44,50 50,44" fill="#ffffff" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />
+                    <polygon points="50,84 56,50 50,44" fill="#e2e8f0" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />
+                    <circle cx="50" cy="50" r="4.5" fill="#d4a843" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Floating Status Bar -->
+        <div class="status-bar" id="statusBar">
+            <div class="bar-sec">
+                <span>📡 जीपीएस:</span>
+                <span class="pulse-indicator" id="gps-pulse"></span>
+                <span id="gps-status-lbl" style="font-weight:600;">बन्द</span>
+            </div>
+            <div class="bar-sec">
+                <span>📍 अक्षांश: <strong id="status-lat">--</strong></span>
+                <span>देशान्तर: <strong id="status-lng">--</strong></span>
+            </div>
+            <div class="bar-sec">
+                <span>🏔️ उचाई: <strong id="status-altitude">--</strong></span>
+            </div>
+            <div class="bar-sec">
+                <span>🏃 गति: <strong id="status-speed">0.0</strong> किमी/घन्टा</span>
+            </div>
+            <div class="bar-sec">
+                <span>🧭 कोण: <strong id="status-heading">0°</strong></span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Floating Toast Alert -->
+    <div class="toast-popup" id="toastAlert"></div>
+
+    <!-- External Leaflet & Routing APIs -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet.locatecontrol@0.79.0/dist/L.Control.Locate.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+
+    <script>
+        // ========== CONFIGURATION & CONSTANTS ==========
+        const NAGARPALIKA_COORDS = [26.66699, 85.76615]; // Official Coordinate Reference
+        const GEOM_ACCURACY_THRESHOLD = 15; // GPS accuracy threshold in meters
+        
+        let map, routingControl;
+        let activeTransportMode = 'car';
+        
+        // Tracking State
+        let isGPSTracking = false;
+        let watchPositionId = null;
+        let userLocationMarker = null;
+        let userAccuracyCircle = null;
+        let deviceHeadingAngle = 0;
+        
+        // GIS Measurement State
+        let isMeasuring = false;
+        let measurePoints = [];
+        let measureLine = null;
+        let measureMarkers = [];
+
+        // Geocoding selection helper
+        let activeInputTarget = null; // 'origin' or 'dest'
+
+        // Map Tile Layers
+        const mapTileLayers = {
+            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap Contributors',
+                maxZoom: 19
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri, Maxar, Earthstar Geographics',
+                maxZoom: 19
+            }),
+            topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenTopoMap contributors',
+                maxZoom: 17
+            }),
+            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© CartoDB, OpenStreetMap contributors',
+                maxZoom: 19
+            })
+        };
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener("DOMContentLoaded", () => {
+            initMap();
+            initRealTimeClock();
+            setupInputFocusHandlers();
+        });
+
+        function initMap() {
+            // Setup Leaflet map instance
+            map = L.map('map', {
+                zoomControl: false,
+                fullscreenControl: true,
+                fullscreenControlOptions: {
+                    position: 'topleft'
+                }
+            }).setView(NAGARPALIKA_COORDS, 13);
+
+            // Set Default Layer
+            mapTileLayers.osm.addTo(map);
+
+            // Add Leaflet Scale
+            L.control.scale({
+                metric: true,
+                imperial: false,
+                position: 'bottomleft'
+            }).addTo(map);
+
+            // Custom styled Zoom Control
+            L.control.zoom({
+                position: 'topleft'
+            }).addTo(map);
+
+            // Add Municipality Office Marker
+            const munIcon = L.divIcon({
+                className: 'mun-office-icon',
+                html: '<div style="font-size:36px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">🏛️</div>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+            L.marker(NAGARPALIKA_COORDS, { icon: munIcon })
+                .addTo(map)
+                .bindPopup(`
+                    <div style="font-family:'Mukta'; text-align:center;">
+                        <h4 style="margin:0; color:var(--primary); font-size:16px;">मनराशिसवा नगरपालिका कार्यालय</h4>
+                        <p style="margin:3px 0 0; font-size:12px; color:#555;">📞 ९८५४०३३१०१ | महोत्तरी</p>
+                    </div>
+                `);
+
+            // Draw Municipality Approximate Boundary Buffer (5km)
+            L.circle(NAGARPALIKA_COORDS, {
+                color: 'var(--primary)',
+                fillColor: 'var(--primary-light)',
+                fillOpacity: 0.08,
+                radius: 5000,
+                weight: 2,
+                dashArray: '8, 8'
+            }).addTo(map);
+
+            // Map Click coordinates conversion
+            map.on('click', (e) => {
+                if (isMeasuring) return; // Skip coordinates lookup during measurement mode
+                
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                
+                // Convert Decimal to DMS format
+                const dmsLat = convertDecimalToDMS(lat, true);
+                const dmsLng = convertDecimalToDMS(lng, false);
+
+                // Auto-fill input based on active field focus
+                if (activeInputTarget) {
+                    const coordString = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    document.getElementById(activeInputTarget === 'origin' ? 'originInput' : 'destInput').value = coordString;
+                    showToast('नक्साबाट स्थान छनौट गरियो।', 'success');
+                    activeInputTarget = null;
+                }
+
+                // Elevation lookup
+                fetchElevation(lat, lng).then(elevation => {
+                    L.popup()
+                        .setLatLng(e.latlng)
+                        .setContent(`
+                            <div style="font-family:'Mukta'; line-height:1.6; min-width:180px;">
+                                <strong style="color:var(--primary);">🎯 विन्दुको भौगोलिक विवरण:</strong>
+                                <hr style="margin:5px 0; border:none; border-top:1px solid #ddd;">
+                                <p style="font-size:12px; margin:2px 0;"><strong>अक्षांश (DD):</strong> ${lat.toFixed(6)}°</p>
+                                <p style="font-size:12px; margin:2px 0;"><strong>देशान्तर (DD):</strong> ${lng.toFixed(6)}°</p>
+                                <p style="font-size:12px; margin:2px 0;"><strong>अक्षांश (DMS):</strong> ${dmsLat}</p>
+                                <p style="font-size:12px; margin:2px 0;"><strong>देशान्तर (DMS):</strong> ${dmsLng}</p>
+                                <p style="font-size:12px; margin:2px 0;"><strong>उचाई (MSL):</strong> ${elevation}</p>
+                            </div>
+                        `)
+                        .openOn(map);
+                });
+            });
+        }
+
+        // ========== SYSTEM UTILITIES ==========
+        function initRealTimeClock() {
+            const updateClock = () => {
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                document.getElementById('live-time').innerHTML = '🕒 ' + now.toLocaleDateString('ne-NP', options);
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toastAlert');
+            toast.textContent = message;
+            toast.className = `toast-popup show ${type}`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            sidebar.classList.toggle('collapsed');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                toggleBtn.textContent = '▶';
+            } else {
+                toggleBtn.textContent = '◀';
+            }
+            setTimeout(() => map.invalidateSize(), 300); // trigger redraw
+        }
+
+        function toggleSidebarState(open) {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle');
+            if (open) {
+                sidebar.classList.remove('collapsed');
+                toggleBtn.textContent = '◀';
+            } else {
+                sidebar.classList.add('collapsed');
+                toggleBtn.textContent = '▶';
+            }
+            setTimeout(() => map.invalidateSize(), 300);
+        }
+
+        function setupInputFocusHandlers() {
+            const originInput = document.getElementById('originInput');
+            const destInput = document.getElementById('destInput');
+
+            originInput.addEventListener('focus', () => activeInputTarget = 'origin');
+            destInput.addEventListener('focus', () => activeInputTarget = 'dest');
+
+            // Hide suggestions on map interaction
+            map.on('mousedown', () => {
+                document.getElementById('search-suggestions').style.display = 'none';
+            });
+        }
+
+        // ========== DMS COORDINATE CONVERSION (GEOMATICS SPECIAL) ==========
+        function convertDecimalToDMS(coordinate, isLatitude) {
+            const absolute = Math.abs(coordinate);
+            const degrees = Math.floor(absolute);
+            const minutesNotTruncated = (absolute - degrees) * 60;
+            const minutes = Math.floor(minutesNotTruncated);
+            const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(2);
+            
+            let direction = "";
+            if (isLatitude) {
+                direction = coordinate >= 0 ? "N" : "S";
+            } else {
+                direction = coordinate >= 0 ? "E" : "W";
+            }
+            return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
+        }
+
+        // ========== ELEVATION RETRIEVAL SYSTEM ==========
+        async function fetchElevation(lat, lng) {
+            try {
+                // Requesting from Open Elevation API
+                const response = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        return `${data.results[0].elevation.toFixed(1)} मिटर`;
+                    }
+                }
+            } catch (err) {
+                console.warn('Elevation fetch fallback trigger');
+            }
+            // Terai plains geographical fallback calculation
+            const noise = (Math.sin(lat * 100) + Math.cos(lng * 100)) * 5;
+            const fallbackElevation = 72 + noise;
+            return `${fallbackElevation.toFixed(1)} मिटर (अनुमानित)`;
+        }
+
+        // ========== LAYER CONTROL MANAGEMENT ==========
+        function setLayer(layerName) {
+            // Remove all existing layers
+            Object.values(mapTileLayers).forEach(layer => map.removeLayer(layer));
+            
+            // Add selected layer
+            mapTileLayers[layerName].addTo(map);
+
+            // Active Class update
+            document.querySelectorAll('.layer-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`layer-${layerName}`).classList.add('active');
+            
+            showToast(`${layerName.toUpperCase()} नक्सा लेयर परिवर्तन भयो।`, 'success');
+        }
+
+        // ========== MAP SEARCH / GEOLOCATION AUTOCOMPLETE ==========
+        let debounceTimer;
+        function handleSearchAutocomplete(query) {
+            clearTimeout(debounceTimer);
+            if (!query || query.trim().length < 3) {
+                document.getElementById('search-suggestions').style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                // Search Nepal only using OSM Nominatim
+                const apiURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=np&limit=5`;
+                fetch(apiURL)
+                    .then(res => res.json())
+                    .then(data => {
+                        const container = document.getElementById('search-suggestions');
+                        container.innerHTML = '';
+                        if (data && data.length > 0) {
+                            data.forEach(item => {
+                                const el = document.createElement('div');
+                                el.className = 'suggestion-item';
+                                el.innerHTML = `📍 ${item.display_name}`;
+                                el.addEventListener('click', () => {
+                                    selectSuggestion(parseFloat(item.lat), parseFloat(item.lon), item.display_name);
+                                });
+                                container.appendChild(el);
+                            });
+                            container.style.display = 'block';
+                        } else {
+                            container.style.display = 'none';
+                        }
+                    }).catch(err => console.error(err));
+            }, 400);
+        }
+
+        function selectSuggestion(lat, lon, displayName) {
+            document.getElementById('searchInput').value = displayName;
+            document.getElementById('search-suggestions').style.display = 'none';
+            map.flyTo([lat, lon], 15, { animate: true, duration: 1.5 });
+            
+            L.popup()
+                .setLatLng([lat, lon])
+                .setContent(`<div style="font-family:'Mukta';">📍 <b>खोजिएको स्थान:</b><br>${displayName}</div>`)
+                .openOn(map);
+
+            // Auto-populate routing field if selected
+            if (activeInputTarget) {
+                document.getElementById(activeInputTarget === 'origin' ? 'originInput' : 'destInput').value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            }
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return;
+            const apiURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=np&limit=1`;
+            fetch(apiURL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        selectSuggestion(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name);
+                    } else {
+                        showToast('माफ गर्नुहोस्, खोजिएको स्थान फेला परेन।', 'error');
+                    }
+                });
+        }
+
+        // ========== COMPASS ORIENTATION CONTROLS (DEVICES GYROSCOPES) ==========
+        function recenterOnUserOrNagarpalika() {
+            if (userLocationMarker) {
+                map.setView(userLocationMarker.getLatLng(), 15, { animate: true });
+                showToast('तपाईंको स्थानमा केन्द्रित गरियो।', 'success');
+            } else {
+                map.setView(NAGARPALIKA_COORDS, 13, { animate: true });
+                showToast('नगरपालिका कार्यालयमा केन्द्रित गरियो।', 'success');
+            }
+            
+            // Recenter/Reset rotation of needle to 0 (North pointing top)
+            deviceHeadingAngle = 0;
+            document.getElementById('compass-rose-needle').style.transform = `rotate(0deg)`;
+        }
+
+        let hasAbsoluteListener = false;
+        function setupOrientationListeners() {
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientationabsolute', (e) => {
+                    hasAbsoluteListener = true;
+                    handleOrientation(e);
+                }, true);
+
+                window.addEventListener('deviceorientation', (e) => {
+                    if (hasAbsoluteListener) return;
+                    handleOrientation(e);
+                }, true);
+            }
+        }
+
+        function handleOrientation(event) {
+            let heading = 0;
+            if (event.webkitCompassHeading) {
+                // iOS Devices
+                heading = event.webkitCompassHeading;
+            } else if (event.alpha !== null && event.alpha !== undefined) {
+                // Android Devices / Others
+                heading = 360 - event.alpha;
+            } else {
+                return;
+            }
+
+            if (isNaN(heading)) return;
+            deviceHeadingAngle = heading;
+            document.getElementById('status-heading').textContent = `${Math.round(deviceHeadingAngle)}°`;
+
+            // Rotate the Compass Needle dynamically (negative to point to magnetic north relative to device rotation)
+            const needle = document.getElementById('compass-rose-needle');
+            if (needle) {
+                needle.style.transform = `rotate(${-deviceHeadingAngle}deg)`;
+            }
+
+            // Rotate User Arrow Indicator on Map (clockwise angle on static map)
+            const userArrow = document.getElementById('user-direction-arrow');
+            if (userArrow) {
+                userArrow.style.transform = `rotate(${deviceHeadingAngle}deg)`;
+            }
+        }
+
+        // ========== REALTIME GPS TRACKING & LOGGING ==========
+        function toggleGPSTracking() {
+            if (isGPSTracking) {
+                stopGPSTracking();
+            } else {
+                startGPSTracking();
+            }
+        }
+
+        function startGPSTracking() {
+            if (!navigator.geolocation) {
+                showToast("तपाईंको ब्राउजरले जीपीएस सपोर्ट गर्दैन।", "error");
+                return;
+            }
+
+            const startWatch = () => {
+                watchPositionId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const accuracy = pos.coords.accuracy;
+                        const speed = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(1) : '0.0';
+                        const altitude = pos.coords.altitude ? `${pos.coords.altitude.toFixed(1)} मिटर` : 'उपलब्ध छैन';
+
+                        // Update UI stats
+                        document.getElementById('status-lat').textContent = lat.toFixed(6);
+                        document.getElementById('status-lng').textContent = lng.toFixed(6);
+                        document.getElementById('status-speed').textContent = speed;
+                        document.getElementById('status-altitude').textContent = altitude;
+
+                        const customArrowHTML = `
+                            <div class="directional-marker-container">
+                                <div id="user-direction-arrow" class="user-arrow" style="transform: rotate(${deviceHeadingAngle}deg);"></div>
+                                <div class="user-pulse"></div>
+                            </div>
+                        `;
+
+                        const directionalIcon = L.divIcon({
+                            className: 'user-directional-marker',
+                            html: customArrowHTML,
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        if (userLocationMarker) {
+                            userLocationMarker.setLatLng([lat, lng]);
+                            userAccuracyCircle.setLatLng([lat, lng]).setRadius(accuracy);
+                            
+                            // Re-apply rotation to ensure it doesn't get reset by map actions
+                            const userArrow = document.getElementById('user-direction-arrow');
+                            if (userArrow) {
+                                userArrow.style.transform = `rotate(${deviceHeadingAngle}deg)`;
+                            }
+                        } else {
+                            userLocationMarker = L.marker([lat, lng], { icon: directionalIcon }).addTo(map);
+                            userAccuracyCircle = L.circle([lat, lng], {
+                                color: '#2563eb',
+                                fillColor: '#3b82f6',
+                                fillOpacity: 0.15,
+                                radius: accuracy,
+                                weight: 1
+                            }).addTo(map);
+                            
+                            // Centering on first acquisition
+                            map.flyTo([lat, lng], 16);
+                        }
+
+                        // Fallback to GPS moving heading if compass is unavailable or phone is moving
+                        if (pos.coords.heading !== null && pos.coords.heading !== undefined && !isNaN(pos.coords.heading)) {
+                            deviceHeadingAngle = pos.coords.heading;
+                            const userArrow = document.getElementById('user-direction-arrow');
+                            if (userArrow) {
+                                userArrow.style.transform = `rotate(${deviceHeadingAngle}deg)`;
+                            }
+                            document.getElementById('status-heading').textContent = `${Math.round(deviceHeadingAngle)}°`;
+                        }
+                    },
+                    (err) => {
+                        showToast(`जीपीएस त्रुटि: ${err.message}`, 'error');
+                        stopGPSTracking();
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0 }
+                );
+            };
+
+            // Request Compass Sensor Permission (Required on iOS 13+) synchronously in user gesture
+            if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            setupOrientationListeners();
+                            showToast('जीपीएस तथा कम्पास सक्रिय भयो।', 'success');
+                        } else {
+                            showToast("कम्पास पहुँच अस्वीकृत भयो।", "warning");
+                        }
+                    }).catch(console.error).finally(() => {
+                        isGPSTracking = true;
+                        document.getElementById('tracking-btn').classList.add('active');
+                        document.getElementById('gps-pulse').classList.add('active');
+                        document.getElementById('gps-status-lbl').textContent = 'सक्रिय';
+                        startWatch();
+                    });
+            } else {
+                setupOrientationListeners();
+                isGPSTracking = true;
+                document.getElementById('tracking-btn').classList.add('active');
+                document.getElementById('gps-pulse').classList.add('active');
+                document.getElementById('gps-status-lbl').textContent = 'सक्रिय';
+                showToast('जीपीएस ट्र्याकिङ सक्रिय भयो।', 'success');
+                startWatch();
+            }
+        }
+
+        function stopGPSTracking() {
+            isGPSTracking = false;
+            document.getElementById('tracking-btn').classList.remove('active');
+            document.getElementById('gps-pulse').classList.remove('active');
+            document.getElementById('gps-status-lbl').textContent = 'बन्द';
+            
+            if (watchPositionId !== null) {
+                navigator.geolocation.clearWatch(watchPositionId);
+                watchPositionId = null;
+            }
+
+            window.removeEventListener('deviceorientationabsolute', handleOrientation);
+            window.removeEventListener('deviceorientation', handleOrientation);
+
+            if (userLocationMarker) {
+                map.removeLayer(userLocationMarker);
+                userLocationMarker = null;
+            }
+            if (userAccuracyCircle) {
+                map.removeLayer(userAccuracyCircle);
+                userAccuracyCircle = null;
+            }
+
+            showToast('जीपीएस ट्र्याकिङ बन्द भयो।', 'info');
+        }
+
+        function useCurrentLocation(targetField) {
+            if (!navigator.geolocation) {
+                showToast("जीपीएस सपोर्ट गर्दैन।", "error");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    document.getElementById(targetField === 'origin' ? 'originInput' : 'destInput').value = `${lat}, ${lng}`;
+                    showToast('तपाईंको वर्तमान स्थान राखियो।', 'success');
+                },
+                (err) => showToast(`स्थान प्राप्त हुन सकेन: ${err.message}`, 'error')
+            );
+        }
+
+        function shareLiveLocation() {
+            if (!navigator.geolocation) {
+                showToast("जीपीएस अनुलब्ध छ।", "error");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const osmLink = `https://www.openstreetmap.org/?mlat=${pos.coords.latitude}&mlon=${pos.coords.longitude}#map=17/${pos.coords.latitude}/${pos.coords.longitude}`;
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'मेरो स्थान - मनराशिसवा नगरपालिका मार्ग',
+                            url: osmLink
+                        }).catch(console.error);
+                    } else {
+                        navigator.clipboard.writeText(osmLink);
+                        showToast('लोकेसन लिङ्क क्लिपबोर्डमा प्रतिलिपि गरियो।', 'success');
+                    }
+                }
+            );
+        }
+
+        // ========== COMPREHENSIVE ROUTING ENGINE (LEAFLET ROUTING MACHINE) ==========
+        function setMode(mode) {
+            activeTransportMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+            
+            // Re-route if fields are not empty
+            const o = document.getElementById('originInput').value;
+            const d = document.getElementById('destInput').value;
+            if (o && d) {
+                findRoute();
+            }
+        }
+
+        function reverseRoute() {
+            const oInput = document.getElementById('originInput');
+            const dInput = document.getElementById('destInput');
+            const temp = oInput.value;
+            oInput.value = dInput.value;
+            dInput.value = temp;
+            
+            if (oInput.value && dInput.value) {
+                findRoute();
+            }
+        }
+
+        async function resolveInputToCoords(query) {
+            if (!query) return null;
+            
+            // Check if string matches coordinates pattern [lat, lng]
+            const coordPattern = /^(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)$/;
+            if (coordPattern.test(query)) {
+                const parts = query.split(',');
+                return L.latLng(parseFloat(parts[0]), parseFloat(parts[1]));
+            }
+
+            // If it's a name, perform search geocoding lookup
+            const apiURL = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=np&limit=1`;
+            try {
+                const response = await fetch(apiURL);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    return L.latLng(parseFloat(data[0].lat), parseFloat(data[0].lon));
+                }
+            } catch (err) {
+                console.error(err);
+            }
+            return null;
+        }
+
+        async function findRoute() {
+            const originVal = document.getElementById('originInput').value.trim();
+            const destVal = document.getElementById('destInput').value.trim();
+
+            if (!originVal || !destVal) {
+                showToast('प्रस्थान र गन्तव्य विन्दु दुवै भर्नुहोस्।', 'warning');
+                return;
+            }
+
+            showToast('बाटो खोजी गरिँदैछ...', 'info');
+
+            const originLatLng = await resolveInputToCoords(originVal);
+            const destLatLng = await resolveInputToCoords(destVal);
+
+            if (!originLatLng || !destLatLng) {
+                showToast('स्थान फेला पार्न सकिएन। विवरण जाँच गर्नुहोस्।', 'error');
+                return;
+            }
+
+            // Clear previous route control instance
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            // Set appropriate profile route configuration
+            let routeProfile = 'driving'; // car default
+            if (activeTransportMode === 'foot') routeProfile = 'walking';
+            if (activeTransportMode === 'bike') routeProfile = 'cycling';
+
+            routingControl = L.Routing.control({
+                waypoints: [originLatLng, destLatLng],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                fitSelectedRoutes: true,
+                show: false, // Hide routing machine default summary window
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1',
+                    profile: routeProfile
+                }),
+                lineOptions: {
+                    styles: [
+                        { color: '#072813', weight: 8, opacity: 0.7 }, // Outer outline
+                        { color: '#d4a843', weight: 5, opacity: 1, className: 'route-line-animated' } // Inner moving dash path
+                    ]
+                },
+                createMarker: function(i, wp, n) {
+                    const label = i === 0 ? '🟢 प्रस्थान' : i === n - 1 ? '🔴 गन्तव्य' : '📍 विन्दु';
+                    const color = i === 0 ? '#27ae60' : i === n - 1 ? '#c0392b' : '#f39c12';
+                    return L.marker(wp.latLng, {
+                        icon: L.divIcon({
+                            className: 'route-node-marker',
+                            html: `<div style="background-color:${color}; width:16px; height:16px; border:3px solid #fff; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.3);" title="${label}"></div>`,
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        })
+                    }).bindPopup(label);
+                }
+            }).addTo(map);
+
+            routingControl.on('routesfound', function(e) {
+                const routes = e.routes;
+                const summary = routes[0].summary;
+                const instructions = routes[0].instructions;
+
+                // Format calculations
+                const distanceKM = (summary.totalDistance / 1000).toFixed(2);
+                const timeMin = Math.round(summary.totalTime / 60);
+                const stepsCount = instructions.length;
+
+                // Bind route values to UI Summary Card
+                document.getElementById('route-distance').textContent = distanceKM;
+                document.getElementById('route-time').textContent = timeMin;
+                document.getElementById('route-steps').textContent = stepsCount;
+
+                // Setup instructions step list
+                const listContainer = document.getElementById('directions-list');
+                listContainer.innerHTML = '';
+                instructions.forEach((step, idx) => {
+                    const li = document.createElement('li');
+                    // Format distance unit
+                    const stepDistText = step.distance > 1000 ? `${(step.distance/1000).toFixed(1)} कि.मी` : `${Math.round(step.distance)} मि.`;
+                    li.innerHTML = `<b>${idx + 1}.</b> ${step.text} <span style="color:var(--secondary-light); font-weight:600;">(${stepDistText})</span>`;
+                    listContainer.appendChild(li);
+                });
+
+                document.getElementById('routeCard').classList.add('show');
+                toggleSidebarState(true); // Ensure sidebar is open to display results
+                showToast('मार्ग सफलतापूर्वक फेला पर्यो।', 'success');
+            });
+
+            routingControl.on('routingerror', function(err) {
+                console.error(err);
+                showToast('मार्ग फेला पार्न असफल भयो। नेटवर्क वा बाटो जाँच्नुहोस्।', 'error');
+            });
+        }
+
+        function clearRouting() {
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            document.getElementById('originInput').value = '';
+            document.getElementById('destInput').value = '';
+            document.getElementById('routeCard').classList.remove('show');
+            showToast('मार्ग र तथ्याङ्कहरू हटाइयो।', 'info');
+        }
+
+        function routeToMunicipality() {
+            document.getElementById('destInput').value = `${NAGARPALIKA_COORDS[0]}, ${NAGARPALIKA_COORDS[1]}`;
+            if (userLocationMarker) {
+                const u = userLocationMarker.getLatLng();
+                document.getElementById('originInput').value = `${u.lat.toFixed(6)}, ${u.lng.toFixed(6)}`;
+                findRoute();
+            } else {
+                useCurrentLocation('origin');
+                showToast('स्थान पहिचान पछि मार्ग निर्धारण हुनेछ।', 'info');
+            }
+        }
+
+        // ========== ADVANCED MEASUREMENT & GEOMATICS (GIS) TOOLS ==========
+        function toggleMeasurement() {
+            isMeasuring = !isMeasuring;
+            const btn = document.getElementById('measure-btn');
+            
+            if (isMeasuring) {
+                btn.classList.add('active');
+                map.getContainer().style.cursor = 'crosshair';
+                showToast('दुरी मापन मोड सक्रिय। नक्सामा विन्दुहरू थप्न क्लिक गर्नुहोस्।', 'info');
+                
+                measurePoints = [];
+                measureMarkers = [];
+                document.getElementById('measure-result').style.display = 'none';
+
+                if (measureLine) {
+                    map.removeLayer(measureLine);
+                }
+
+                measureLine = L.polyline([], {
+                    color: 'var(--secondary)',
+                    weight: 4,
+                    dashArray: '8, 8',
+                    opacity: 0.9
+                }).addTo(map);
+
+                map.on('click', onMeasureMapClick);
+            } else {
+                btn.classList.remove('active');
+                map.getContainer().style.cursor = '';
+                map.off('click', onMeasureMapClick);
+                showToast('दुरी मापन मोड निष्क्रिय।', 'info');
+            }
+        }
+
+        function onMeasureMapClick(e) {
+            const latlng = e.latlng;
+            measurePoints.push(latlng);
+            measureLine.setLatLngs(measurePoints);
+
+            // Create Point Circle Marker
+            const marker = L.circleMarker(latlng, {
+                radius: 6,
+                fillColor: 'var(--primary)',
+                color: 'white',
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(map);
+
+            measureMarkers.push(marker);
+
+            // Calculate total accumulated distance
+            if (measurePoints.length > 1) {
+                let accumulatedDistance = 0;
+                for (let i = 1; i < measurePoints.length; i++) {
+                    accumulatedDistance += measurePoints[i - 1].distanceTo(measurePoints[i]);
+                }
+
+                const distText = accumulatedDistance > 1000 ? 
+                    `${(accumulatedDistance / 1000).toFixed(2)} कि.मी` : 
+                    `${Math.round(accumulatedDistance)} मिटर`;
+
+                document.getElementById('measure-dist').textContent = distText;
+                document.getElementById('measure-result').style.display = 'block';
+
+                marker.bindPopup(`दुरी: ${distText}`).openPopup();
+            } else {
+                marker.bindPopup('सुरुवात विन्दु').openPopup();
+            }
+        }
+
+        function clearMeasurement() {
+            if (measureLine) {
+                map.removeLayer(measureLine);
+                measureLine = null;
+            }
+            measureMarkers.forEach(m => map.removeLayer(m));
+            measureMarkers = [];
+            measurePoints = [];
+            document.getElementById('measure-result').style.display = 'none';
+            if (isMeasuring) {
+                toggleMeasurement();
+            }
+            showToast('नाप रेकर्डहरू मेटाइयो।', 'info');
+        }
+    </script>
+</body>
+</html>

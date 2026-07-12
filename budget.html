@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>बजेट तथा कार्यक्रम | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <a href="#">कार्यक्रम तथा परियोजना</a> <span>></span>
+            <span>बजेट तथा कार्यक्रम</span>
+        </div>
+        
+        <h2 class="section-title">बजेट तथा कार्यक्रम (Budget & Programs)</h2>
+        
+        <div class="card">
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">क्र.सं.</th>
+                            <th width="50%">शीर्षक</th>
+                            <th width="15%">आ.व.</th>
+                            <th width="15%">प्रकार</th>
+                            <th width="15%">मिति</th>
+                        </tr>
+                    </thead>
+                    <tbody id="budgetList">
+                        <!-- Fallback -->
+                        <tr>
+                            <td>१</td>
+                            <td>आ.व.२०८१-०८२ को आय व्यय विवरण</td>
+                            <td>२०८१/०८२</td>
+                            <td><span class="badge badge-notice">आय व्यय</span></td>
+                            <td>२०८१-०६-०१</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('programs');
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const budgets = await api('/budget');
+                if (budgets && budgets.length > 0) {
+                    const list = document.getElementById('budgetList');
+                    list.innerHTML = '';
+                    
+                    budgets.forEach((b, i) => {
+                        let typeName = b.budget_type;
+                        if(typeName === 'budget') typeName = 'बजेट';
+                        if(typeName === 'plan') typeName = 'योजना';
+                        if(typeName === 'income_expenditure') typeName = 'आय व्यय';
+                        
+                        list.innerHTML += `
+                            <tr>
+                                <td>${toNepaliDigits(i+1)}</td>
+                                <td>${b.file_url ? `<a href="${b.file_url}" target="_blank">${b.title}</a>` : b.title}</td>
+                                <td>${toNepaliDigits(b.fiscal_year)}</td>
+                                <td><span class="badge badge-notice">${typeName}</span></td>
+                                <td>${b.publish_date ? toNepaliDigits(b.publish_date.split('T')[0]) : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.log('Using fallback'); }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ऐन कानुन निर्देशिका | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <a href="#">सूचना तथा जानकारी</a> <span>></span>
+            <span>ऐन कानुन निर्देशिका</span>
+        </div>
+        
+        <h2 class="section-title">ऐन कानुन निर्देशिका (Laws & Procedures)</h2>
+        
+        <div class="card" style="margin-bottom: 30px;">
+            <div class="tabs-container">
+                <div class="tabs" id="docTabs">
+                    <button class="tab-btn active" data-tab="" onclick="fetchDocs('')">सबै</button>
+                    <button class="tab-btn" data-tab="law" onclick="fetchDocs('law')">ऐन</button>
+                    <button class="tab-btn" data-tab="procedure" onclick="fetchDocs('procedure')">कार्यविधि</button>
+                    <button class="tab-btn" data-tab="report" onclick="fetchDocs('report')">प्रतिवेदन</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="overflow-x:auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th width="5%">क्र.सं.</th>
+                        <th width="60%">शीर्षक</th>
+                        <th width="15%">वर्ग</th>
+                        <th width="10%">मिति</th>
+                        <th width="10%">डाउनलोड</th>
+                    </tr>
+                </thead>
+                <tbody id="docsList">
+                    <!-- Fallback -->
+                    <tr>
+                        <td>१</td>
+                        <td>साक्षरता अभियान सञ्चालन तथा साक्षर नगरपालिका घोषणा सम्बन्धी कार्यविधि, २०८१</td>
+                        <td><span class="badge badge-notice">कार्यविधि</span></td>
+                        <td>२०८१-०५-२६</td>
+                        <td><a href="#" class="btn btn-sm btn-outline">डाउनलोड</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('notices');
+        
+        document.addEventListener('DOMContentLoaded', () => fetchDocs(''));
+
+        async function fetchDocs(category) {
+            // update tabs
+            document.querySelectorAll('#docTabs .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.getAttribute('data-tab') === category) btn.classList.add('active');
+            });
+            
+            try {
+                const url = category ? `/documents?category=${category}` : '/documents';
+                const res = await api(url);
+                if (res && res.data && res.data.length > 0) {
+                    const list = document.getElementById('docsList');
+                    list.innerHTML = '';
+                    
+                    res.data.forEach((d, i) => {
+                        let catName = 'अन्य';
+                        if(d.category === 'law') catName = 'ऐन';
+                        if(d.category === 'procedure') catName = 'कार्यविधि';
+                        if(d.category === 'report') catName = 'प्रतिवेदन';
+                        if(d.category === 'notice') catName = 'सूचना';
+                        
+                        list.innerHTML += `
+                            <tr>
+                                <td>${toNepaliDigits(i+1)}</td>
+                                <td>${d.title}</td>
+                                <td><span class="badge badge-notice">${catName}</span></td>
+                                <td>${d.publish_date ? toNepaliDigits(d.publish_date.split('T')[0]) : '-'}</td>
+                                <td>${d.file_url ? `<a href="${d.file_url}" target="_blank" class="btn btn-sm btn-outline">डाउनलोड</a>` : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.log('Using fallback'); }
+        }
+    </script>
+</body>
+</html>

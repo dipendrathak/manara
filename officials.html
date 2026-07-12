@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>जन प्रतिनिधि | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <a href="#">परिचय</a> <span>></span>
+            <span>जन प्रतिनिधि</span>
+        </div>
+        
+        <h2 class="section-title">जन प्रतिनिधि (Elected Representatives)</h2>
+        
+        <!-- Mayor and Deputy Mayor (loaded via JS) -->
+        <div class="grid-2" id="top-officials" style="margin-bottom: 50px;"></div>
+        
+        <h3 class="section-title" style="font-size: 24px; margin-bottom: 30px;">वडा अध्यक्ष तथा अन्य प्रतिनिधिहरू</h3>
+        <!-- Other Officials (loaded via JS) -->
+        <div class="grid-3" id="other-officials"></div>
+    </main>
+
+    <!-- Global Official Modal -->
+    <div id="officialModal" class="profile-modal">
+        <div class="profile-modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-header-info">
+                <img id="modalImg" src="" class="profile-img-large" alt="Profile Photo">
+                <h2 id="modalName" style="margin-bottom: 5px;"></h2>
+                <h3 id="modalDesignation" style="color: var(--danger); font-style: italic;"></h3>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>सम्पर्क नम्बर (Phone)</h4>
+                    <p id="modalPhone"></p>
+                </div>
+                <div class="info-item">
+                    <h4>ईमेल (Email)</h4>
+                    <p id="modalEmail"></p>
+                </div>
+            </div>
+            
+            <div class="bio-section">
+                <h3>संक्षिप्त परिचय (Bio)</h3>
+                <p id="modalBio">थप विवरण उपलब्ध छैन।</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('about');
+
+        let allOfficialsData = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const officials = await api('/officials');
+
+                if (officials && officials.length > 0) {
+                    allOfficialsData = officials;
+
+                    const topDiv = document.getElementById('top-officials');
+                    const otherDiv = document.getElementById('other-officials');
+
+                    topDiv.innerHTML = '';
+                    otherDiv.innerHTML = '';
+
+                    officials.forEach(o => {
+                        const imgUrl = o.image_url || '';
+                        const safeName = (o.name || '').replace(/'/g, "\\'");
+                        const safeDesig = (o.designation || '').replace(/'/g, "\\'");
+                        const safePhone = (o.phone || '').replace(/'/g, "\\'");
+                        const safeEmail = (o.email || '').replace(/'/g, "\\'");
+
+                        const isTop = (o.designation || '').includes('प्रमुख') || (o.designation || '').includes('उप प्रमुख');
+                        const cardClass = isTop ? 'profile-card top-official' : 'profile-card';
+
+                        const html = `
+                            <div class="${cardClass}">
+                                ${imgUrl ? `<img src="${imgUrl}" alt="${o.name}" class="profile-img">` : ''}
+                                <h3 class="profile-name">${o.name}</h3>
+                                <p class="profile-designation">${o.designation}</p>
+                                <div class="profile-details">
+                                    ${o.phone ? `<p>📞 ${toNepaliDigits(o.phone)}</p>` : ''}
+                                    ${o.email ? `<p style="word-break: break-all;">✉️ <a href="mailto:${o.email}">${o.email}</a></p>` : ''}
+                                </div>
+                                <button class="btn view-profile-btn" onclick="openOfficialModal(${o.id}, '${safeName}', '${safeDesig}', '${safePhone}', '${safeEmail}', '${imgUrl}')">विस्तृत विवरण हेर्नुहोस्</button>
+                            </div>
+                        `;
+
+                        if (isTop) topDiv.innerHTML += html;
+                        else otherDiv.innerHTML += html;
+                    });
+                }
+            } catch (e) {
+                console.log('Using fallback data', e);
+            }
+        });
+
+        function openOfficialModal(id, name, designation, phone, email, imgUrl) {
+            document.getElementById('modalImg').src = imgUrl || '';
+            document.getElementById('modalName').textContent = name || '';
+            document.getElementById('modalDesignation').textContent = designation || '';
+            document.getElementById('modalPhone').textContent = phone ? toNepaliDigits(phone) : '-';
+            document.getElementById('modalEmail').textContent = email || '-';
+
+            const officialObj = allOfficialsData.find(o => o.id === id);
+            if (officialObj) {
+                document.getElementById('modalBio').textContent = officialObj.bio || 'थप विवरण उपलब्ध छैन।';
+            } else {
+                document.getElementById('modalBio').textContent = 'थप विवरण उपलब्ध छैन।';
+            }
+
+            window.openProfileModal('officialModal');
+        }
+    </script>
+</body>
+</html>
+

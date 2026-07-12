@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>विधुतीय शुसासन सेवा | मनराशिसवा नगरपालिका</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="header-container"></div>
+    <main class="container page-content">
+        <div class="breadcrumb">
+            <a href="index.html">गृहपृष्ठ</a> <span>></span>
+            <span>विधुतीय शुसासन सेवा</span>
+        </div>
+        
+        <h2 class="section-title">विधुतीय शुसासन सेवा (e-Governance Services)</h2>
+        
+        <div class="grid-3" id="servicesGrid">
+            <!-- Fallback -->
+            <div class="card service-card">
+                <div class="service-icon">📝</div>
+                <h3>घटना दर्ता</h3>
+                <p>जन्म, मृत्यु, विवाह दर्ता सेवा</p>
+                <button class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</button>
+            </div>
+            <div class="card service-card">
+                <div class="service-icon">🛡️</div>
+                <h3>सामाजिक सुरक्षा</h3>
+                <p>सामाजिक सुरक्षा भत्ता व्यवस्थापन</p>
+                <button class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</button>
+            </div>
+        </div>
+        
+        <h3 style="margin-top:50px; color:var(--primary); margin-bottom:20px;">नमुना फारमहरु (Sample Forms)</h3>
+        <div class="card">
+            <ul style="list-style:none;">
+                <li style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+                    <span>जन्मको सूचना फारम</span>
+                    <a href="#" class="btn btn-sm btn-outline">डाउनलोड</a>
+                </li>
+                <li style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
+                    <span>विवाहको सूचना फारम</span>
+                    <a href="#" class="btn btn-sm btn-outline">डाउनलोड</a>
+                </li>
+                <li style="padding:15px; display:flex; justify-content:space-between;">
+                    <span>मृत्युको सूचना फारम</span>
+                    <a href="#" class="btn btn-sm btn-outline">डाउनलोड</a>
+                </li>
+            </ul>
+        </div>
+    </main>
+    <div id="footer-container"></div>
+    
+    <script src="js/components.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        initPage('services');
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const services = await api('/services');
+                if (services && services.length > 0) {
+                    const grid = document.getElementById('servicesGrid');
+                    grid.innerHTML = '';
+                    services.forEach(s => {
+                        grid.innerHTML += `
+                            <div class="card service-card">
+                                <div class="service-icon">${s.icon || '📌'}</div>
+                                <h3>${s.title}</h3>
+                                <p>${s.description || ''}</p>
+                                <button class="btn btn-outline btn-sm" style="margin-top:15px;">विस्तृत हेर्नुहोस्</button>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (e) { console.log('Using fallback'); }
+        });
+    </script>
+</body>
+</html>

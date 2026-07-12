@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Manarashiswa Nagarpalika</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0d3b1e;
+            --primary-dark: #072813;
+            --secondary: #d4a843;
+            --bg: #f4f6f8;
+            --sidebar-bg: #1a1a2e;
+            --sidebar-hover: #16213e;
+            --text: #333;
+            --text-light: #666;
+            --white: #fff;
+            --border: #e0e0e0;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --radius: 8px;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* LOGIN OVERLAY */
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center; }
+        .login-box { background: white; padding: 40px; border-radius: var(--radius); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .login-box h2 { color: var(--primary); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 16px; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: var(--secondary); color: var(--primary-dark); }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .btn-success { background: var(--success); color: white; }
+
+        /* LAYOUT */
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-nav { flex: 1; padding: 10px 0; }
+        .nav-item { display: block; padding: 15px 20px; color: #ccc; text-decoration: none; transition: 0.3s; cursor: pointer; }
+        .nav-item:hover, .nav-item.active { background: var(--sidebar-hover); color: var(--secondary); border-left: 4px solid var(--secondary); }
+        .nav-title { padding: 10px 20px; font-size: 12px; color: #888; text-transform: uppercase; margin-top: 10px; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .topbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); }
+        .content-area { padding: 30px; }
+
+        /* CARDS & TABLES */
+        .card { background: white; border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); margin-bottom: 25px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--primary); }
+        .stat-card h3 { font-size: 30px; color: var(--primary); }
+        .stat-card p { color: var(--text-light); font-weight: 500; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f8f9fa; font-weight: 600; color: #444; }
+        tr:hover { background: #fdfdfd; }
+        
+        .section-panel { display: none; }
+        .section-panel.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* TOAST */
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 10000; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+
+        /* FORM */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        textarea.form-control { resize: vertical; min-height: 100px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
+        .bg-primary { background: var(--primary); }
+        .bg-danger { background: var(--danger); }
+        .bg-success { background: var(--success); }
+        .bg-warning { background: #f39c12; }
+
+        /* Table Builder */
+        .column-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f9f9f9; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>Admin Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" class="form-control" required value="admin">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" class="form-control" required>
+                    <small style="color:#888;">Hint: admin123</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3 style="color:var(--secondary)">मनराशिसवा Admin</h3>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-title">Core Modules</div>
+            <a class="nav-item active" onclick="showSection('dashboard')">📊 ड्यासबोर्ड (Dashboard)</a>
+            <a class="nav-item" onclick="showSection('officials')">👤 जन प्रतिनिधि (Officials)</a>
+            <a class="nav-item" onclick="showSection('staff')">👥 कर्मचारी (Staff)</a>
+            <a class="nav-item" onclick="showSection('wards')">🏢 वडा कार्यालय (Wards)</a>
+            <a class="nav-item" onclick="showSection('services')">💻 सेवाहरू (Services)</a>
+            <a class="nav-item" onclick="showSection('documents')">📄 कागजात (Documents)</a>
+            <a class="nav-item" onclick="showSection('notices')">📢 सूचना (Notices)</a>
+            <a class="nav-item" onclick="showSection('budget')">💰 बजेट (Budget)</a>
+            <a class="nav-item" onclick="showSection('reports')">📊 प्रतिवेदन (Reports)</a>
+            <a class="nav-item" onclick="showSection('gallery')">🖼️ ग्यालरी (Gallery)</a>
+            <a class="nav-item" onclick="showSection('messages')">📧 सन्देश (Messages)</a>
+            
+            <div class="nav-title">Dynamic Tables</div>
+            <div id="dynamic-nav-items"></div>
+            
+            <div class="nav-title">System Administration</div>
+            <a class="nav-item" onclick="showSection('database_manager')">🗄️ Database Builder</a>
+            <a class="nav-item" onclick="showSection('audit_log')">📋 Audit Log</a>
+            <a class="nav-item" onclick="showSection('backup')">💾 Backup & Restore</a>
+            <a class="nav-item" onclick="showSection('settings')">⚙️ सेटिङ (Settings)</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <h2>ड्यासबोर्ड</h2>
+            <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+        <div class="content-area">
+            
+            <!-- Dashboard Section -->
+            <div id="sec-dashboard" class="section-panel active">
+                <div class="grid-4" id="statsGrid">
+                    <!-- Stats loaded via JS -->
+                </div>
+            </div>
+
+            <!-- Generic CRUD Template used for all other sections (Generated by JS) -->
+            <div id="sec-officials" class="section-panel"></div>
+            <div id="sec-staff" class="section-panel"></div>
+            <div id="sec-wards" class="section-panel"></div>
+            <div id="sec-services" class="section-panel"></div>
+            <div id="sec-documents" class="section-panel"></div>
+            <div id="sec-notices" class="section-panel"></div>
+            <div id="sec-budget" class="section-panel"></div>
+            <div id="sec-reports" class="section-panel"></div>
+            <div id="sec-gallery" class="section-panel"></div>
+            <div id="sec-messages" class="section-panel"></div>
+            <div id="sec-settings" class="section-panel"></div>
+            
+            <!-- Dynamic Sections container -->
+            <div id="dynamic-sections"></div>
+
+            <!-- Database Manager -->
+            <div id="sec-database_manager" class="section-panel">
+                <div class="card">
+                    <h3>🗄️ Create New Database Table</h3>
+                    <p style="color:var(--text-light); margin-bottom: 20px;">Use this builder to create custom data tables. The system will automatically generate APIs, admin forms, and public pages for your new table.</p>
+                    
+                    <form id="tableBuilderForm" onsubmit="createDynamicTable(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Table System Name (no spaces, e.g. 'health_centers') *</label>
+                                <input type="text" id="dt_name" class="form-control" required pattern="^[a-zA-Z_][a-zA-Z0-9_]*$">
+                            </div>
+                            <div class="form-group">
+                                <label>Display Name (e.g. 'स्वास्थ्य चौकी') *</label>
+                                <input type="text" id="dt_display" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Icon (Emoji)</label>
+                                <input type="text" id="dt_icon" class="form-control" value="📁">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center; gap: 10px; padding-top: 30px;">
+                                <input type="checkbox" id="dt_public" checked style="width: 20px; height: 20px;">
+                                <label style="margin: 0;">Make Public (Show on website)</label>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Define Columns</h4>
+                        <div id="columns-container">
+                            <!-- Columns added here -->
+                        </div>
+                        
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addColumnRow()">+ Add Column</button>
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                        <button type="submit" class="btn btn-primary">Create Table</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h3>Existing Custom Tables</h3>
+                    <table style="margin-top:20px;">
+                        <thead><tr><th>Icon</th><th>Name</th><th>Table</th><th>Public</th><th>Actions</th></tr></thead>
+                        <tbody id="dt-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Audit Log -->
+            <div id="sec-audit_log" class="section-panel">
+                <div class="card">
+                    <h3>📋 System Audit Log</h3>
+                    <table style="margin-top:20px; font-size: 14px;">
+                        <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Target Table</th><th>Record ID</th></tr></thead>
+                        <tbody id="audit-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Backup -->
+            <div id="sec-backup" class="section-panel">
+                <div class="card">
+                    <h3>💾 Database Backup & Restore</h3>
+                    <p style="margin-bottom: 20px; color: var(--text-light);">Download a complete backup of your SQLite database.</p>
+                    <button class="btn btn-primary" onclick="downloadBackup()">⬇️ Download Database Backup</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast">Message</div>
+
+    <script>
+        const API_URL = window.location.origin + '/api';
+        let token = localStorage.getItem('adminToken');
+
+        // Setup CRUD Configurations
+        let configs = {
+            officials: { title: 'जन प्रतिनिधि (Officials)', endpoint: '/officials', hasImage: true, fields: [
+                { name: 'name', label: 'नाम', type: 'text', req: true },
+                { name: 'designation', label: 'पद', type: 'text', req: true },
+                { name: 'phone', label: 'फोन', type: 'text' },
+                { name: 'email', label: 'ईमेल', type: 'email' },
+                { name: 'bio', label: 'विवरण', type: 'textarea', full: true }
+            ], cols: ['Photo', 'नाम', 'पद', 'फोन', 'Actions'] },
+            
+            staff: { title: 'कर्मचारी (Staff)', endpoint: '/staff', hasImage: true, fields: [
+                { name: 'name', label: 'नाम', type: 'text', req: true },
+                { name: 'designation', label: 'पद', type: 'text', req: true },
+                { name: 'section', label: 'शाखा', type: 'text' },
+                { name: 'phone', label: 'फोन', type: 'text' },
+                { name: 'email', label: 'ईमेल', type: 'email' },
+                { name: 'join_date', label: 'सुरु मिति', type: 'date' }
+            ], cols: ['Photo', 'नाम', 'पद', 'शाखा', 'फोन', 'Actions'] },
+            
+            wards: { title: 'वडा कार्यालय (Wards)', endpoint: '/wards', fields: [
+                { name: 'ward_number', label: 'वडा नं.', type: 'number', req: true },
+                { name: 'ward_name', label: 'वडाको नाम', type: 'text', req: true },
+                { name: 'chairman_name', label: 'अध्यक्षको नाम', type: 'text' },
+                { name: 'phone', label: 'फोन', type: 'text' },
+                { name: 'email', label: 'ईमेल', type: 'email' },
+                { name: 'description', label: 'विवरण', type: 'textarea', full: true }
+            ], cols: ['वडा नं.', 'नाम', 'अध्यक्ष', 'फोन', 'Actions'] },
+            
+            services: { title: 'सेवाहरू (Services)', endpoint: '/services', fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text', req: true },
+                { name: 'icon', label: 'Icon (Emoji)', type: 'text' },
+                { name: 'category', label: 'Category', type: 'text' },
+                { name: 'description', label: 'विवरण', type: 'textarea', full: true }
+            ], cols: ['Icon', 'शीर्षक', 'Category', 'Actions'] },
+            
+            notices: { title: 'सूचना (Notices)', endpoint: '/notices', fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text', req: true, full: true },
+                { name: 'notice_type', label: 'प्रकार', type: 'select', options: ['notice','urgent','news','procurement'], req: true },
+                { name: 'publish_date', label: 'मिति', type: 'date' },
+                { name: 'content', label: 'विवरण', type: 'textarea', full: true }
+            ], cols: ['शीर्षक', 'प्रकार', 'मिति', 'Actions'] },
+            
+            budget: { title: 'बजेट (Budget)', endpoint: '/budget', hasFile: true, fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text', req: true, full: true },
+                { name: 'fiscal_year', label: 'आर्थिक वर्ष', type: 'text', req: true },
+                { name: 'budget_type', label: 'प्रकार', type: 'select', options: ['budget','plan','income_expenditure'], req: true },
+                { name: 'publish_date', label: 'मिति', type: 'date' }
+            ], cols: ['शीर्षक', 'आ.व.', 'प्रकार', 'मिति', 'Actions'] },
+
+            reports: { title: 'प्रतिवेदन (Reports)', endpoint: '/reports', hasFile: true, fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text', req: true, full: true },
+                { name: 'report_type', label: 'प्रकार', type: 'select', options: ['annual','quarterly','hearing','testing'], req: true },
+                { name: 'publish_date', label: 'मिति', type: 'date' }
+            ], cols: ['शीर्षक', 'प्रकार', 'मिति', 'Actions'] },
+            
+            documents: { title: 'कागजात (Documents)', endpoint: '/documents', hasFile: true, fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text', req: true, full: true },
+                { name: 'category', label: 'प्रकार', type: 'select', options: ['law','procedure','notice','report','other'], req: true },
+                { name: 'publish_date', label: 'मिति', type: 'date' }
+            ], cols: ['शीर्षक', 'प्रकार', 'मिति', 'Actions'] },
+            
+            gallery: { title: 'ग्यालरी (Gallery)', endpoint: '/gallery', hasImage: true, fields: [
+                { name: 'title', label: 'शीर्षक', type: 'text' },
+                { name: 'category', label: 'Category', type: 'text' },
+                { name: 'event_date', label: 'मिति', type: 'date' }
+            ], cols: ['Photo', 'शीर्षक', 'मिति', 'Actions'] },
+
+            messages: { title: 'सन्देश (Messages)', endpoint: '/contact/messages', fields: [
+                { name: 'name', label: 'नाम (Name)', type: 'text', req: true },
+                { name: 'phone', label: 'फोन (Phone)', type: 'text', req: true },
+                { name: 'subject', label: 'विषय (Subject)', type: 'text', req: true, full: true },
+                { name: 'message', label: 'सन्देश (Message)', type: 'textarea', req: true, full: true }
+            ], cols: ['Name', 'Phone', 'Subject', 'Message', 'Actions'] }
+        };
+
+        // Initialize UI
+        async function initUI() {
+            if (token) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                await loadDynamicTables();
+                loadDashboard();
+                generateSections();
+            }
+        }
+
+        // Auth
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            try {
+                const res = await fetch(API_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    token = data.token;
+                    localStorage.setItem('adminToken', token);
+                    showToast('Login successful', 'success');
+                    initUI();
+                } else showToast(data.error || 'Login failed', 'danger');
+            } catch(e) { showToast('Server error', 'danger'); }
+        });
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            token = null;
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+
+        // API Helper
+        async function api(path, options = {}) {
+            if(!options.headers) options.headers = {};
+            if(!(options.body instanceof FormData)) options.headers['Content-Type'] = 'application/json';
+            options.headers['Authorization'] = 'Bearer ' + token;
+            
+            const res = await fetch(API_URL + path, options);
+            if(res.status === 401 || res.status === 403) { logout(); throw new Error('Unauthorized'); }
+            return await res.json();
+        }
+
+        // Toast
+        function showToast(msg, type='primary') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.backgroundColor = type === 'danger' ? '#e74c3c' : '#2ecc71';
+            t.className = 'show';
+            setTimeout(() => { t.className = t.className.replace('show', ''); }, 3000);
+        }
+
+        // Navigation
+        function showSection(id) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(event) event.target.classList.add('active');
+            
+            document.querySelectorAll('.section-panel').forEach(el => el.classList.remove('active'));
+            document.getElementById('sec-' + id).classList.add('active');
+            
+            if(event) document.querySelector('.topbar h2').textContent = event.target.textContent.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').split('(')[0].trim();
+            
+            if(id === 'dashboard') loadDashboard();
+            else if(id === 'settings') loadSettings();
+            else if(id === 'database_manager') loadDynamicTableList();
+            else if(id === 'audit_log') loadAuditLog();
+            else if(configs[id]) loadData(id);
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                const data = await api('/stats/dashboard');
+                const grid = document.getElementById('statsGrid');
+                grid.innerHTML = '';
+                const map = { officials: 'पदाधिकारी', staff: 'कर्मचारी', services: 'सेवाहरू', documents: 'कागजात', notices: 'सूचना', gallery: 'ग्यालरी', messages: 'सन्देश', budget: 'बजेट' };
+                for (let key in data) {
+                    grid.innerHTML += `
+                        <div class="stat-card">
+                            <div><h3>${data[key]}</h3><p>${map[key] || key}</p></div>
+                        </div>`;
+                }
+            } catch(e) {}
+        }
+
+        // Generate Section HTML
+        function generateSections() {
+            for(let key in configs) {
+                const conf = configs[key];
+                const sec = document.getElementById('sec-' + key);
+                if(!sec) continue; // Skip if element not created
+                
+                let html = '';
+                if(!conf.readonly) {
+                    html += `
+                    <div class="card">
+                        <h3>Add New ${conf.title}</h3>
+                        <form id="form-${key}" onsubmit="submitForm(event, '${key}')" style="margin-top:20px;">
+                            <div class="form-grid">`;
+                    
+                    conf.fields.forEach(f => {
+                        html += `<div class="form-group ${f.full ? 'full-width' : ''}">
+                            <label>${f.label}</label>`;
+                        if(f.type === 'textarea') html += `<textarea class="form-control" name="${f.name}" ${f.req?'required':''}></textarea>`;
+                        else if(f.type === 'select') {
+                            html += `<select class="form-control" name="${f.name}" ${f.req?'required':''}>
+                                ${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}
+                            </select>`;
+                        } else html += `<input type="${f.type}" class="form-control" name="${f.name}" ${f.req?'required':''}>`;
+                        html += `</div>`;
+                    });
+
+                    if(conf.hasImage) html += `<div class="form-group"><label>Upload Image</label><input type="file" class="form-control" name="image" accept="image/*"></div>`;
+                    if(conf.hasFile) html += `<div class="form-group"><label>Upload File</label><input type="file" class="form-control" name="file"></div>`;
+                    
+                    html += `</div><button type="submit" class="btn btn-primary" style="margin-top:15px; width:auto;">Save</button>
+                        </form>
+                    </div>`;
+                }
+                
+                html += `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>${conf.title} List</h3>
+                        ${conf.isDynamic ? `<button class="btn btn-secondary btn-sm" onclick="exportData('${key}', 'csv')">Export CSV</button>` : ''}
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="margin-top:20px;">
+                            <thead><tr>${conf.cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                            <tbody id="tbody-${key}"></tbody>
+                        </table>
+                    </div>
+                </div>`;
+                
+                sec.innerHTML = html;
+            }
+
+            // Settings section
+            const setSec = document.getElementById('sec-settings');
+            if (setSec && setSec.innerHTML === '') {
+                setSec.innerHTML = `
+                    <div class="card">
+                        <h3>Site Settings</h3>
+                        <form id="form-settings" onsubmit="saveSettings(event)" style="margin-top:20px;">
+                            <div class="form-grid" id="settings-fields"></div>
+                            <button type="submit" class="btn btn-primary" style="margin-top:15px; width:auto;">Save Settings</button>
+                        </form>
+                    </div>
+                `;
+            }
+        }
+
+        // CRUD Operations
+        async function loadData(key) {
+            try {
+                const conf = configs[key];
+                let res = await api(conf.endpoint);
+                let data = res.data ? res.data : res; // Handle paginated docs
+                
+                const tbody = document.getElementById('tbody-' + key);
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                
+                data.forEach(item => {
+                    let row = '<tr>';
+                    
+                    if(conf.isDynamic) {
+                        conf.colNames.forEach(colName => {
+                            let val = item[colName];
+                            if (val && typeof val === 'string' && val.startsWith('/uploads/')) {
+                                row += `<td><a href="${val}" target="_blank">View File</a></td>`;
+                            } else {
+                                row += `<td>${val || ''}</td>`;
+                            }
+                        });
+                    } else {
+                        // Static standard logic
+                        if(key === 'officials') row += `<td><img src="${item.image_url||''}" height="40"></td><td>${item.name}</td><td>${item.designation}</td><td>${item.phone||''}</td>`;
+                        if(key === 'staff') row += `<td><img src="${item.image_url||''}" height="40"></td><td>${item.name}</td><td>${item.designation}</td><td>${item.section||''}</td><td>${item.phone||''}</td>`;
+                        if(key === 'wards') row += `<td>${item.ward_number}</td><td>${item.ward_name}</td><td>${item.chairman_name||''}</td><td>${item.phone||''}</td>`;
+                        if(key === 'services') row += `<td>${item.icon||''}</td><td>${item.title}</td><td>${item.category||''}</td>`;
+                        if(key === 'notices') row += `<td>${item.title}</td><td><span class="badge bg-primary">${item.notice_type}</span></td><td>${item.publish_date?.split('T')[0]||''}</td>`;
+                        if(key === 'budget') row += `<td>${item.title}</td><td>${item.fiscal_year}</td><td>${item.budget_type}</td><td>${item.publish_date?.split('T')[0]||''}</td>`;
+                        if(key === 'reports') row += `<td>${item.title}</td><td>${item.report_type}</td><td>${item.publish_date?.split('T')[0]||''}</td>`;
+                        if(key === 'documents') row += `<td>${item.title}</td><td>${item.category}</td><td>${item.publish_date?.split('T')[0]||''}</td>`;
+                        if(key === 'gallery') row += `<td><img src="${item.image_url}" height="40"></td><td>${item.title||''}</td><td>${item.event_date?.split('T')[0]||''}</td>`;
+                        if(key === 'messages') row += `<td>${item.name}</td><td>${item.phone}</td><td>${item.subject}</td><td>${item.message.substring(0,30)}...</td>`;
+                    }
+
+                    if(!conf.readonly) {
+                        row += `<td><button class="btn btn-danger btn-sm" onclick="deleteItem('${key}', ${item.id})">Delete</button></td>`;
+                    } else if (conf.cols.includes('Actions')) {
+                        row += `<td></td>`;
+                    }
+                    row += '</tr>';
+                    tbody.innerHTML += row;
+                });
+            } catch(e) {}
+        }
+
+        async function submitForm(e, key) {
+            e.preventDefault();
+            const conf = configs[key];
+            const form = e.target;
+            
+            let body;
+            let options = { method: 'POST' };
+            
+            if(conf.hasImage || conf.hasFile || conf.isDynamic) { // Dynamic tables always use FormData for upload potential
+                body = new FormData(form);
+                options.body = body;
+            } else {
+                body = Object.fromEntries(new FormData(form).entries());
+                options.body = JSON.stringify(body);
+            }
+            
+            try {
+                await api(conf.endpoint, options);
+                showToast('Saved successfully');
+                form.reset();
+                loadData(key);
+            } catch(e) { showToast('Error saving', 'danger'); }
+        }
+
+        async function deleteItem(key, id) {
+            if(!confirm('Are you sure you want to delete this item?')) return;
+            try {
+                await api(configs[key].endpoint + '/' + id, { method: 'DELETE' });
+                showToast('Deleted successfully');
+                loadData(key);
+            } catch(e) { showToast('Error deleting', 'danger'); }
+        }
+
+        // Settings
+        async function loadSettings() {
+            try {
+                const data = await api('/settings');
+                let html = '';
+                const keys = ['site_name', 'slogan', 'phone', 'email', 'address', 'population', 'area', 'total_wards', 'total_households'];
+                keys.forEach(k => {
+                    html += `<div class="form-group"><label>${k.replace('_',' ').toUpperCase()}</label><input type="text" class="form-control" name="${k}" value="${data[k]||''}"></div>`;
+                });
+                
+                // Add Logo Upload UI
+                html += `
+                <div class="form-group full-width" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <label>MUNICIPALITY LOGO UPLOAD</label>
+                    <input type="file" id="logoUploadInput" class="form-control" accept="image/*" style="margin-bottom: 10px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="uploadLogo()">Upload Logo</button>
+                    <div style="margin-top: 10px;">
+                        <img id="currentLogoPreview" src="${data['municipality_logo'] || ''}" style="max-height: 80px; ${data['municipality_logo'] ? '' : 'display:none;'}">
+                    </div>
+                </div>`;
+                
+                document.getElementById('settings-fields').innerHTML = html;
+            } catch(e) {}
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const body = Object.fromEntries(new FormData(e.target).entries());
+            try {
+                await api('/settings', { method: 'PUT', body: JSON.stringify(body) });
+                showToast('Settings saved');
+            } catch(e) { showToast('Error saving', 'danger'); }
+        }
+
+        async function uploadLogo() {
+            const input = document.getElementById('logoUploadInput');
+            if (!input.files[0]) return showToast('Please select an image first', 'danger');
+            
+            const formData = new FormData();
+            formData.append('logo', input.files[0]);
+            
+            try {
+                const res = await fetch(API_URL + '/settings/logo', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('Logo uploaded successfully', 'success');
+                    const img = document.getElementById('currentLogoPreview');
+                    img.src = data.logo_url;
+                    img.style.display = 'block';
+                } else {
+                    showToast('Error uploading logo', 'danger');
+                }
+            } catch(e) {
+                showToast('Upload failed', 'danger');
+            }
+        }
+
+        // Dynamic Tables Builder
+        let colCount = 0;
+        function addColumnRow() {
+            const container = document.getElementById('columns-container');
+            const rowId = `col-${colCount++}`;
+            const row = document.createElement('div');
+            row.className = 'column-row';
+            row.id = rowId;
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="System Name (e.g. age)" style="width: 25%" required pattern="^[a-zA-Z_][a-zA-Z0-9_]*$">
+                <input type="text" class="form-control" placeholder="Display Name (e.g. उमेर)" style="width: 25%" required>
+                <select class="form-control" style="width: 20%">
+                    <option value="text">Text (Short)</option>
+                    <option value="textarea">Textarea (Long)</option>
+                    <option value="number">Number</option>
+                    <option value="date">Date</option>
+                    <option value="image">Image Upload</option>
+                    <option value="file">File Upload (PDF)</option>
+                </select>
+                <label style="display:flex; align-items:center; gap:5px; width: 20%;"><input type="checkbox"> Required</label>
+                <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('${rowId}').remove()">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        async function createDynamicTable(e) {
+            e.preventDefault();
+            const rows = document.querySelectorAll('.column-row');
+            if(rows.length === 0) return showToast('Add at least one column', 'danger');
+            
+            const columns = Array.from(rows).map(r => {
+                const inputs = r.querySelectorAll('input, select');
+                return {
+                    column_name: inputs[0].value,
+                    display_name: inputs[1].value,
+                    column_type: inputs[2].value,
+                    is_required: inputs[3].checked
+                };
+            });
+
+            const payload = {
+                table_name: document.getElementById('dt_name').value,
+                display_name: document.getElementById('dt_display').value,
+                icon: document.getElementById('dt_icon').value,
+                is_public: document.getElementById('dt_public').checked,
+                columns: columns
+            };
+
+            try {
+                const res = await api('/dynamic/tables', { method: 'POST', body: JSON.stringify(payload) });
+                showToast('Table created!');
+                e.target.reset();
+                document.getElementById('columns-container').innerHTML = '';
+                colCount = 0;
+                await loadDynamicTables(); // Refresh sidebar
+                generateSections();
+                loadDynamicTableList();
+            } catch(err) {
+                showToast('Error creating table', 'danger');
+            }
+        }
+
+        async function loadDynamicTables() {
+            try {
+                const res = await api('/dynamic/tables');
+                const nav = document.getElementById('dynamic-nav-items');
+                const secs = document.getElementById('dynamic-sections');
+                nav.innerHTML = '';
+                secs.innerHTML = '';
+                
+                for(let table of res) {
+                    const schemaRes = await api(`/dynamic/schema/${table.table_name}`);
+                    const colsInfo = schemaRes.columns;
+                    
+                    const fields = colsInfo.map(c => ({
+                        name: c.column_name,
+                        label: c.display_name,
+                        type: c.column_type === 'number' ? 'number' : (c.column_type === 'textarea' ? 'textarea' : 'text'),
+                        req: c.is_required
+                    }));
+                    
+                    let hasImage = colsInfo.some(c => c.column_type === 'image');
+                    let hasFile = colsInfo.some(c => c.column_type === 'file');
+                    
+                    configs[table.table_name] = {
+                        title: table.display_name,
+                        endpoint: `/dynamic/data/${table.table_name}`,
+                        isDynamic: true,
+                        tableName: table.table_name,
+                        fields: fields,
+                        hasImage: hasImage,
+                        hasFile: hasFile,
+                        cols: colsInfo.map(c => c.display_name).concat(['Actions']),
+                        colNames: colsInfo.map(c => c.column_name)
+                    };
+                    
+                    nav.innerHTML += `<a class="nav-item" onclick="showSection('${table.table_name}')">${table.icon || '📁'} ${table.display_name}</a>`;
+                    secs.innerHTML += `<div id="sec-${table.table_name}" class="section-panel"></div>`;
+                }
+            } catch(e) {}
+        }
+
+        async function loadDynamicTableList() {
+            try {
+                const tables = await api('/dynamic/tables');
+                const tbody = document.getElementById('dt-list');
+                tbody.innerHTML = '';
+                tables.forEach(t => {
+                    tbody.innerHTML += `<tr>
+                        <td>${t.icon}</td>
+                        <td>${t.display_name}</td>
+                        <td>${t.table_name}</td>
+                        <td>${t.is_public ? '✅' : '❌'}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="dropTable('${t.table_name}')">Drop</button></td>
+                    </tr>`;
+                });
+            } catch(e) {}
+        }
+
+        async function dropTable(name) {
+            if(!confirm(`WARNING: This will permanently delete the table '${name}' and all its data! Are you sure?`)) return;
+            try {
+                await api(`/dynamic/tables/${name}`, { method: 'DELETE' });
+                showToast('Table deleted');
+                delete configs[name];
+                document.getElementById('sec-' + name)?.remove();
+                await loadDynamicTables();
+                generateSections();
+                loadDynamicTableList();
+            } catch(e) { showToast('Error', 'danger'); }
+        }
+
+        // System Logs & Backup
+        async function loadAuditLog() {
+            try {
+                const logs = await api('/admin/audit-log');
+                const tbody = document.getElementById('audit-list');
+                tbody.innerHTML = '';
+                logs.forEach(l => {
+                    tbody.innerHTML += `<tr>
+                        <td>${l.created_at}</td>
+                        <td><span class="badge bg-primary">${l.username}</span></td>
+                        <td>${l.action}</td>
+                        <td>${l.table_name}</td>
+                        <td>${l.record_id || '-'}</td>
+                    </tr>`;
+                });
+            } catch(e) {}
+        }
+
+        function downloadBackup() {
+            window.location.href = API_URL + '/admin/backup?token=' + token;
+        }
+
+        function exportData(key, format) {
+            const table = configs[key];
+            if(!table) return;
+            showToast('Export feature coming soon!');
+        }
+
+        // Start
+        addColumnRow();
+        initUI();
+    </script>
+</body>
+</html>
