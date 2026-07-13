@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
+const initSqlJs = require('sql.js');
+
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -62,12 +62,54 @@ const getUploadsDir = () => {
     return localUploads;
 };
 
-// Database connection wrapper for SQLite
-let db;
+// Database connection wrapper for SQLite (sql.js: pure JS, compatible with Vercel)
+let sqlJsDb;
+let sqlJsModulePromise;
+
+const loadSqlJsModule = () => {
+    if (!sqlJsModulePromise) {
+        // In Node, locateFile should point to a local path (not an http URL).
+        // sql.js package includes sql-wasm.wasm, so default locateFile is sufficient.
+        sqlJsModulePromise = initSqlJs();
+    }
+    return sqlJsModulePromise;
+};
+
+
+const readDatabaseFile = (filePath) => {
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`SQLite database file not found: ${filePath}`);
+    }
+    return fs.readFileSync(filePath);
+};
+
+const persistDatabaseFile = (dbInstance) => {
+    const data = dbInstance.export();
+    const buf = Buffer.from(data);
+    const targetPath = getDatabasePath();
+    fs.writeFileSync(targetPath, buf);
+};
+
+const getDb = async () => {
+    if (sqlJsDb) return sqlJsDb;
+
+    const SQL = await loadSqlJsModule();
+    const filename = getDatabasePath();
+
+    // Load once from disk
+    const fileBuffer = readDatabaseFile(filename);
+    const uint8 = new Uint8Array(fileBuffer);
+
+    sqlJsDb = new SQL.Database(uint8);
+
+    return sqlJsDb;
+};
+
 const pool = {
     execute: async (query, params = []) => {
-        if (!db) db = await open({ filename: getDatabasePath(), driver: sqlite3.Database });
-        
+        const dbInstance = await getDb();
+
+        // Normalize a few MySQLisms used in your queries
         if (query.includes('ON DUPLICATE KEY UPDATE')) {
             query = query.replace('ON DUPLICATE KEY UPDATE setting_value = ?', 'ON CONFLICT(setting_key) DO UPDATE SET setting_value = ?');
         }
@@ -75,19 +117,36 @@ const pool = {
             query = query.replace(/NOW\(\)/g, "datetime('now')");
         }
 
-        if (query.trim().toUpperCase().startsWith('SELECT')) {
-            const rows = await db.all(query, params);
+        const upper = query.trim().toUpperCase();
+
+        if (upper.startsWith('SELECT')) {
+            const stmt = dbInstance.prepare(query);
+            stmt.bind(params);
+            const rows = [];
+            while (stmt.step()) {
+                rows.push(stmt.getAsObject());
+            }
+            stmt.free();
             return [rows];
-        } else {
-            const result = await db.run(query, params);
-            return [{ insertId: result.lastID, affectedRows: result.changes }];
         }
+
+        // For non-SELECT, use run to execute updates.
+        const normalizedParams = params.map((p) => (p === undefined ? null : p));
+        dbInstance.run(query, normalizedParams);
+
+        // Persist back to disk for Vercel (/tmp) and local.
+        try {
+            persistDatabaseFile(dbInstance);
+        } catch (e) {
+            console.error('Failed to persist sqlite database file:', e);
+        }
+
+        // Best-effort metadata mapping
+        const changes = dbInstance.getRowsModified ? dbInstance.getRowsModified() : undefined;
+        return [{ insertId: null, affectedRows: changes || null }];
     }
 };
 
-(async () => {
-    db = await open({ filename: getDatabasePath(), driver: sqlite3.Database });
-})();
 
 const logAudit = async (username, action, table_name, record_id, details) => {
     try {
