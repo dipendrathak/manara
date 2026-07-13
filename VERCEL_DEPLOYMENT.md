@@ -1,6 +1,11 @@
 # Vercel Deployment & Admin Login Guide
 
-This guide provides step-by-step instructions to deploy the Manarashiswa Nagarpalika portal to Vercel and log in to the admin panel.
+This guide provides step-by-step instructions to deploy the Manarashiswa Nagarpalika portal to Vercel and log in to the admin panel. 
+
+Website Type: General Municipal / Government Information Portal.
+
+(Author: Dipendra Thak.)
+
 
 ---
 
